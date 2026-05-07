@@ -1,0 +1,3187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHELTERMATH — Fallout Protection Factor Calculator</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a08;--bg2:#111110;--bg3:#1a1a17;--bg4:#222220;
+  --green:#00ff41;--green2:#00cc33;--green3:#009922;--green4:#006611;
+  --amber:#ffb000;--red:#ff3333;--teal:#00ffcc;
+  --text:#c8ffc8;--text2:#88aa88;--text3:#556655;
+  --border:#1e2e1e;--border2:#2a3a2a;
+  font-family:'Courier New',Courier,monospace;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-size:11px}
+#app{display:flex;flex-direction:column;width:100%;height:100%}
+#header{display:flex;align-items:center;gap:10px;padding:4px 10px;background:var(--bg2);border-bottom:1px solid var(--border2);flex-shrink:0;height:28px}
+#header h1{font-size:13px;font-weight:700;color:var(--green);letter-spacing:2px}
+#header .tagline{color:var(--text3);font-size:10px;letter-spacing:1px}
+#header .spacer{flex:1}
+#header button{background:none;border:1px solid var(--border2);color:var(--text2);padding:2px 8px;cursor:pointer;font-family:inherit;font-size:10px;letter-spacing:1px}
+#header button:hover{border-color:var(--green3);color:var(--green)}
+#main{display:flex;flex:1;overflow:hidden}
+#toolbar{width:190px;min-width:130px;max-width:320px;background:var(--bg2);border-right:1px solid var(--border2);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.tb-section{border-bottom:1px solid var(--border);padding:6px}
+.tb-label{color:var(--text3);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.tb-btn{display:flex;align-items:center;gap:6px;width:100%;padding:5px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer;font-family:inherit;font-size:11px;margin-bottom:3px;text-align:left}
+.tb-btn:hover{border-color:var(--green3);color:var(--green);background:rgba(0,255,65,0.04)}
+.tb-btn.active{border-color:var(--green);color:var(--green);background:rgba(0,255,65,0.08)}
+.tb-btn .kb{margin-left:auto;color:var(--text3);font-size:10px;border:1px solid var(--border2);padding:0 3px}
+.fl-btn-group{display:flex;gap:2px;margin-bottom:4px}
+.fl-btn{flex:1;padding:4px 2px;background:var(--bg3);border:1px solid var(--border);color:var(--text3);cursor:pointer;font-family:inherit;font-size:10px;text-align:center;letter-spacing:0.5px}
+.fl-btn:hover{border-color:var(--green3);color:var(--text2)}
+.fl-btn.active{border-color:var(--green);color:var(--green);background:rgba(0,255,65,0.08)}
+.fl-btn.has-rooms{color:var(--text2)}
+.tb-field{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:3px 6px;font-family:inherit;font-size:11px;margin-bottom:4px}
+.tb-field:focus{outline:none;border-color:var(--green3)}
+select.tb-field option{background:var(--bg2)}
+.tb-row{display:flex;gap:4px;margin-bottom:4px;align-items:center}
+.tb-row label{color:var(--text2);font-size:10px;min-width:60px}
+.drag-handle{width:4px;background:var(--border2);cursor:col-resize;flex-shrink:0;transition:background 0.1s}
+.drag-handle:hover,.drag-handle.dragging{background:var(--green3)}
+#canvas-area{flex:1;position:relative;overflow:hidden;background:var(--bg)}
+#canvas-wrap{position:absolute;inset:0;overflow:auto;background:var(--bg)}
+#main-canvas{display:block}
+#rpanel{width:320px;min-width:200px;max-width:500px;background:var(--bg2);border-left:1px solid var(--border2);display:flex;flex-direction:column;flex-shrink:0}
+.tab-bar{display:flex;border-bottom:1px solid var(--border2);flex-shrink:0}
+.tab{flex:1;padding:5px 2px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);cursor:pointer;font-family:inherit;font-size:10px;letter-spacing:0.5px;text-transform:uppercase}
+.tab:hover{color:var(--text2)}
+.tab.active{border-bottom-color:var(--green);color:var(--green)}
+.tab-content{flex:1;overflow-y:auto;padding:8px}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.rp-label{color:var(--text3);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;margin-top:8px}
+.rp-label:first-child{margin-top:0}
+.rp-field{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:3px 6px;font-family:inherit;font-size:11px;margin-bottom:4px}
+.rp-field:focus{outline:none;border-color:var(--green3)}
+select.rp-field option{background:var(--bg2)}
+.rp-row{display:flex;gap:4px;margin-bottom:4px;align-items:center}
+.rp-row label{color:var(--text2);font-size:10px;min-width:70px;flex-shrink:0}
+.rp-row input,.rp-row select{flex:1;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:2px 5px;font-family:inherit;font-size:11px}
+.rp-row input:focus,.rp-row select:focus{outline:none;border-color:var(--green3)}
+.face-btn-group{display:flex;gap:2px;flex-wrap:wrap;margin-bottom:6px}
+.face-btn{padding:3px 6px;background:var(--bg3);border:1px solid var(--border);color:var(--text3);cursor:pointer;font-family:inherit;font-size:10px}
+.face-btn:hover{border-color:var(--green3);color:var(--text2)}
+.face-btn.active{border-color:var(--green);color:var(--green);background:rgba(0,255,65,0.06)}
+.rp-btn{padding:4px 10px;background:none;border:1px solid var(--border2);color:var(--text2);cursor:pointer;font-family:inherit;font-size:10px;letter-spacing:1px}
+.rp-btn:hover{border-color:var(--green3);color:var(--green)}
+.rp-btn.primary{border-color:var(--green3);color:var(--green)}
+.rp-btn.primary:hover{background:rgba(0,255,65,0.08)}
+.rp-btn.danger{border-color:#aa3333;color:#ff6666}
+.rp-btn.danger:hover{background:rgba(200,50,50,0.08)}
+.layer-item{display:flex;align-items:center;gap:4px;padding:4px 6px;background:var(--bg3);border:1px solid var(--border);margin-bottom:3px;font-size:10px}
+.layer-item .lname{flex:1;color:var(--text)}
+.layer-item .lmass{color:var(--text3);min-width:52px;text-align:right;font-size:9px}
+.layer-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px;font-family:inherit}
+.layer-btn:hover{color:var(--green)}
+.xsec-bar{height:18px;display:flex;margin:4px 0 8px;border:1px solid var(--border);overflow:hidden}
+.xsec-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:8px;overflow:hidden;color:#aaffaa}
+.opening-item{display:flex;align-items:center;gap:4px;padding:3px 6px;background:var(--bg3);border:1px solid var(--border);margin-bottom:3px;font-size:10px;color:var(--text2)}
+.opening-item .oname{flex:1}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px}
+.stat-box{background:var(--bg3);border:1px solid var(--border);padding:6px 8px}
+.stat-box .sv{font-size:17px;font-weight:700;color:var(--green)}
+.stat-box .sl{font-size:9px;color:var(--text3);letter-spacing:1px;margin-top:2px}
+.pf-green{color:#00ff41}.pf-yellow{color:#ffb000}.pf-red{color:#ff3333}
+.dose-risk{padding:5px 8px;font-size:11px;margin-top:4px;border-left:3px solid;line-height:1.5}
+.risk-low{border-color:#00cc33;background:rgba(0,200,50,0.07);color:#88ff88}
+.risk-mild{border-color:#ffb000;background:rgba(255,176,0,0.07);color:#ffcc66}
+.risk-mod{border-color:#ff8800;background:rgba(255,136,0,0.07);color:#ffaa44}
+.risk-sev{border-color:#ff3333;background:rgba(255,50,50,0.07);color:#ff8888}
+.risk-let{border-color:#ff0000;background:rgba(200,0,0,0.1);color:#ff4444;font-weight:700}
+.slider-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.slider-row label{color:var(--text2);font-size:10px;min-width:78px;flex-shrink:0}
+.slider-row input[type=range]{flex:1;accent-color:var(--green)}
+.slider-row .sval{width:46px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:1px 4px;font-family:inherit;font-size:10px;text-align:right}
+.room-list-item{display:flex;align-items:center;gap:6px;padding:5px 6px;background:var(--bg3);border:1px solid var(--border);margin-bottom:3px;cursor:pointer}
+.room-list-item:hover{border-color:var(--green3)}
+.room-list-item.selected{border-color:var(--green);background:rgba(0,255,65,0.04)}
+.rli-pf{min-width:50px;font-weight:700;text-align:right;font-size:11px}
+.pf-ref-row{display:flex;justify-content:space-between;padding:3px 6px;font-size:10px;border-bottom:1px solid var(--border)}
+.pf-ref-row .pf-val{min-width:44px;font-weight:700}
+#statusbar{height:20px;padding:0 10px;background:var(--bg2);border-top:1px solid var(--border2);display:flex;align-items:center;gap:16px;font-size:10px;color:var(--text3);flex-shrink:0}
+.sb-green{color:var(--green)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:100;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--bg2);border:1px solid var(--green3);padding:18px;max-width:520px;width:92%;max-height:82vh;overflow-y:auto}
+.modal h2{color:var(--green);font-size:14px;letter-spacing:2px;margin-bottom:10px}
+.modal p{color:var(--text2);font-size:11px;line-height:1.75;margin-bottom:8px}
+.modal .close-btn{margin-top:14px;padding:7px 22px;background:none;border:1px solid var(--green3);color:var(--green);cursor:pointer;font-family:inherit;font-size:11px;letter-spacing:2px}
+.modal .close-btn:hover{background:rgba(0,255,65,0.08)}
+.ctx-menu{position:fixed;z-index:60;background:var(--bg2);border:1px solid var(--green3);min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,0.8)}
+.ctx-item{padding:6px 14px;color:var(--text2);cursor:pointer;font-size:11px}
+.ctx-item:hover{background:rgba(0,255,65,0.06);color:var(--green)}
+.ctx-item.danger{color:#ff6666}
+.ctx-item.danger:hover{background:rgba(200,50,50,0.06)}
+.unit-toggle{display:flex}
+.unit-toggle button{padding:3px 10px;background:none;border:1px solid var(--border2);color:var(--text3);cursor:pointer;font-family:inherit;font-size:10px}
+.unit-toggle button.active{border-color:var(--green);color:var(--green);background:rgba(0,255,65,0.06)}
+.lib-item{padding:6px 8px;background:var(--bg3);border:1px solid var(--border);margin-bottom:3px}
+.lib-item .li-name{color:var(--text);font-size:11px}
+.lib-item .li-detail{color:var(--text3);font-size:10px;margin-top:2px}
+input[type=checkbox]{accent-color:var(--green)}
+.sep{border:none;border-top:1px solid var(--border);margin:7px 0}
+.vf-table{width:100%;font-size:10px;border-collapse:collapse;margin:4px 0}
+.vf-table td{padding:2px 5px;border-bottom:1px solid var(--border)}
+.vf-table td:first-child{color:var(--text3)}
+.vf-table td:last-child{color:var(--text);text-align:right}
+.note{color:var(--text3);font-size:10px;line-height:1.6;margin-top:4px}
+
+/* Zoom controls — anchored to canvas-area, never scrolls with canvas */
+#zoom-controls{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:3px;z-index:20}
+#zoom-controls button{width:28px;height:28px;background:var(--bg2);border:1px solid var(--border2);color:var(--text2);cursor:pointer;font-family:inherit;font-size:15px;display:flex;align-items:center;justify-content:center;line-height:1;transition:border-color 0.1s,color 0.1s}
+#zoom-controls button:hover{border-color:var(--green3);color:var(--green)}
+#zoom-level{color:var(--text3);font-size:9px;text-align:center;letter-spacing:0.5px;padding:1px 0;background:var(--bg2);border:1px solid var(--border2)}
+
+/* Collapsible map key — anchored to bottom-left of canvas-area */
+#map-key{position:absolute;bottom:28px;left:8px;z-index:20;background:var(--bg2);border:1px solid var(--border2);min-width:152px;font-family:'Courier New',Courier,monospace}
+#map-key-header{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;cursor:pointer;user-select:none}
+#map-key-header:hover{background:rgba(0,255,65,0.05)}
+#map-key-body{padding:6px 8px;border-top:1px solid var(--border)}
+#map-key-body.collapsed{display:none}
+.key-row{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--text2);margin-bottom:4px;line-height:1.3}
+.key-row:last-child{margin-bottom:0}
+.key-swatch{display:inline-block;width:10px;height:10px;flex-shrink:0;border:1px solid rgba(255,255,255,0.1)}
+
+/* Snap indicator pulse */
+@keyframes snapPulse{0%{box-shadow:0 0 0 0 rgba(0,255,204,0.6)}70%{box-shadow:0 0 0 6px rgba(0,255,204,0)}100%{box-shadow:0 0 0 0 rgba(0,255,204,0)}}
+</style>
+</head>
+<body>
+
+<div id="disclaimer-modal" class="modal-overlay">
+  <div class="modal">
+    <h2>// SHELTERMATH v3.3.beta</h2>
+    <p><strong style="color:var(--green)">What this tool does:</strong> Estimates how much a building structure reduces indoor gamma radiation dose from nuclear fallout, expressed as a Protection Factor (PF). Uses FEMA REP-10 methodology with physically-correct multiplicative layer attenuation, Lambertian view factor geometry, NCRP-165 ground-shine corrections, and per-floor overhead corrections.</p>
+    <p><strong style="color:var(--amber)">Limitations:</strong> This is a personal educational tool, not certified engineering software. Outputs approximate real-world performance. Factors not modeled include irregular geometry, penetrations, HVAC pathways, scattered radiation streaming, and material non-uniformity. Use NukeMap or official FEMA data for dose-rate inputs.</p>
+    <p><strong style="color:var(--amber)">Official resources:</strong> FEMA, CDC, and your local emergency management agency. This tool does not replace professional engineering assessment.</p>
+    <p><strong style="color:var(--green)">Privacy:</strong> All calculations run entirely in your browser. No data is ever transmitted to any server.</p>
+    <button class="close-btn" onclick="document.getElementById('disclaimer-modal').style.display='none'">[ ACKNOWLEDGE AND CONTINUE ]</button>
+  </div>
+</div>
+
+<div id="app">
+  <div id="header">
+    <h1>SHELTERMATH</h1>
+    <span class="tagline">FALLOUT PROTECTION FACTOR CALCULATOR</span>
+    <div class="spacer"></div>
+    <div class="unit-toggle">
+      <button id="btn-imperial" class="active" onclick="S.setUnits('imperial')">IMPERIAL</button>
+      <button id="btn-metric" onclick="S.setUnits('metric')">METRIC</button>
+    </div>
+    <button onclick="S.newProject()" style="margin-left:6px">NEW</button>
+    <button onclick="S.exportProject()">EXPORT</button>
+    <button onclick="document.getElementById('import-file').click()">IMPORT</button>
+    <input type="file" id="import-file" style="display:none" accept=".json" onchange="S.importProject(event)">
+    <button onclick="document.getElementById('disclaimer-modal').style.display='flex'">? ABOUT</button>
+  </div>
+
+  <div id="main">
+    <div id="toolbar">
+
+      <div class="tb-section">
+        <div class="tb-label">Floor Level</div>
+        <div class="fl-btn-group">
+          <button class="fl-btn" id="flbtn-basement" onclick="S.setFloor('basement')">BSMT</button>
+          <button class="fl-btn active" id="flbtn-ground" onclick="S.setFloor('ground')">GND</button>
+          <button class="fl-btn" id="flbtn-upper" onclick="S.setFloor('upper')">2ND</button>
+          <button class="fl-btn" id="flbtn-upper2" onclick="S.setFloor('upper2')">3RD+</button>
+        </div>
+        <div id="floor-room-count" style="color:var(--text3);font-size:10px">0 rooms on this floor</div>
+      </div>
+
+      <div class="tb-section">
+        <div class="tb-label">Tools</div>
+        <button class="tb-btn active" id="tool-select" onclick="S.setTool('select')">▶ SELECT <span class="kb">S</span></button>
+        <button class="tb-btn" id="tool-room" onclick="S.setTool('room')">▣ DRAW ROOM <span class="kb">R</span></button>
+        <button class="tb-btn" id="tool-wall" onclick="S.setTool('wall')">╱ DRAW WALL <span class="kb">W</span></button>
+        <button class="tb-btn" id="tool-opening" onclick="S.setTool('opening')">◫ OPENING <span class="kb">O</span></button>
+        <button class="tb-btn" id="tool-person" onclick="S.setTool('person')">⊕ PLACE PERSON <span class="kb">P</span></button>
+      </div>
+
+      <!-- Rotate / Transform -->
+      <div class="tb-section">
+        <div class="tb-label">Transform Selected</div>
+        <button class="tb-btn" onclick="S.rotateRoom(90)">↻ ROTATE 90° CW <span class="kb">]</span></button>
+        <button class="tb-btn" onclick="S.rotateRoom(-90)">↺ ROTATE 90° CCW <span class="kb">[</span></button>
+        <div class="note" style="margin-top:2px">Works on selected rooms and walls.</div>
+      </div>
+
+      <!-- Floor Plan Background Image -->
+      <div class="tb-section">
+        <div class="tb-label">Floor Plan Image</div>
+        <div style="color:var(--text3);font-size:10px;margin-bottom:5px;line-height:1.5">Upload a floor plan as a background reference. Image is scaled to fill the grid.</div>
+        <button class="tb-btn" onclick="document.getElementById('floorplan-file').click()" style="margin-bottom:3px">
+          &#x1F4C2; UPLOAD IMAGE
+        </button>
+        <input type="file" id="floorplan-file" style="display:none" accept="image/*" onchange="S.loadFloorplan(event)">
+        <div id="floorplan-controls" style="display:none">
+          <div class="tb-row">
+            <label>Visible</label>
+            <input type="checkbox" id="floorplan-visible" checked onchange="S.setFloorplanVisible(this.checked)">
+          </div>
+          <div class="tb-row">
+            <label>Opacity</label>
+            <input type="range" id="floorplan-opacity" min="0.05" max="0.9" step="0.05" value="0.35"
+              oninput="S.setFloorplanOpacity(parseFloat(this.value))"
+              style="flex:1;accent-color:var(--green)">
+            <span id="floorplan-opacity-val" style="color:var(--text2);font-size:10px;min-width:26px;text-align:right">35%</span>
+          </div>
+          <button class="rp-btn danger" style="font-size:9px;margin-top:2px" onclick="S.clearFloorplan()">REMOVE IMAGE</button>
+        </div>
+      </div>
+
+      <div class="tb-section">
+        <div class="tb-label">Heatmap</div>
+        <div class="tb-row">
+          <label>Show heatmap</label>
+          <input type="checkbox" id="heatmap-toggle" checked onchange="S.toggleHeatmap(this.checked)">
+        </div>
+        <div class="tb-row">
+          <label>Resolution</label>
+          <select class="tb-field" id="heatmap-res" onchange="S.setHeatmapRes(this.value)" style="font-size:10px">
+            <option value="4">Fast (4px)</option>
+            <option value="2" selected>Normal (2px)</option>
+            <option value="1">Fine (1px)</option>
+          </select>
+        </div>
+        <div class="tb-row">
+          <label>Color mode</label>
+          <select class="tb-field" id="heatmap-mode" onchange="S.setHeatmapMode(this.value)" style="font-size:10px">
+            <option value="pf">PF value</option>
+            <option value="dose">Dose rate</option>
+          </select>
+        </div>
+        <div id="person-readout" style="display:none;margin-top:4px;padding:6px;background:var(--bg3);border:1px solid var(--green3)">
+          <div style="color:var(--text3);font-size:9px;letter-spacing:1px;margin-bottom:3px">PERSON POSITION</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:1px">PF <span id="person-pf-val">—</span></div>
+          <div style="font-size:10px;margin-bottom:4px" id="person-pf-desc">—</div>
+          <div style="color:var(--text3);font-size:10px" id="person-pos-label">—</div>
+          <div style="color:var(--text2);font-size:10px;margin-top:1px" id="person-room-label">—</div>
+          <!-- Dose rate readout -->
+          <div id="person-dose-panel" style="margin-top:7px;padding:5px;background:var(--bg2);border:1px solid var(--border2)">
+            <div style="color:var(--text3);font-size:9px;letter-spacing:1px;margin-bottom:4px">DOSE ESTIMATE</div>
+            <div class="tb-row" style="margin-bottom:3px">
+              <label style="min-width:52px">DR(1)</label>
+              <span id="person-dr1" style="color:var(--amber);font-size:11px;font-weight:700">—</span>
+              <span style="color:var(--text3);font-size:9px;margin-left:3px">R/hr</span>
+            </div>
+            <div class="tb-row" style="margin-bottom:3px">
+              <label style="min-width:52px">At position</label>
+              <span id="person-drpos" style="color:var(--amber);font-size:11px;font-weight:700">—</span>
+              <span style="color:var(--text3);font-size:9px;margin-left:3px">R/hr</span>
+            </div>
+            <div class="tb-row" style="margin-bottom:4px">
+              <label style="min-width:52px">Accum.</label>
+              <span id="person-dose-acc" style="color:var(--red);font-size:12px;font-weight:700">—</span>
+              <select id="person-dose-unit" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-family:inherit;font-size:9px;margin-left:3px;padding:1px 2px" onchange="S.updatePersonReadout()">
+                <option value="R">R</option>
+                <option value="rad">rad</option>
+                <option value="rem">rem</option>
+                <option value="mSv">mSv</option>
+                <option value="Gy">Gy</option>
+              </select>
+            </div>
+            <div id="person-risk" style="font-size:10px;padding:3px 5px;border-left:2px solid var(--border2);margin-bottom:3px;line-height:1.4">—</div>
+            <div style="color:var(--text3);font-size:9px;line-height:1.4">Uses Dose tab DR(1) &amp; timing.<br>Entry: H+<span id="person-entry-ref">—</span>hr, Duration: <span id="person-dur-ref">—</span>hr</div>
+          </div>
+          <button class="rp-btn danger" style="margin-top:6px;font-size:9px;width:100%" onclick="S.clearPerson()">REMOVE MARKER</button>
+        </div>
+        <div id="person-hint" style="color:var(--text3);font-size:10px;margin-top:4px">Select PLACE PERSON, then click anywhere — inside or outside a room.</div>
+      </div>
+
+      <!-- Gamma Hot Spot tracing (default off) -->
+      <div class="tb-section">
+        <div class="tb-label" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Gamma Source</span>
+          <input type="checkbox" id="hotspot-enabled" onchange="S.toggleHotspot(this.checked)" title="Enable gamma source tracing">
+        </div>
+        <div id="hotspot-off-hint" style="color:var(--text3);font-size:10px;line-height:1.5">
+          Off by default. Enable to place a gamma point source and see a dose-rate overlay (inverse-square + material attenuation).
+        </div>
+        <div id="hotspot-controls" style="display:none">
+          <div class="tb-row">
+            <label>Isotope</label>
+            <select class="tb-field" id="hs-isotope" onchange="S.updateHotspotCfg()" style="font-size:10px"></select>
+          </div>
+          <div id="hs-iso-note" style="color:var(--text3);font-size:9px;margin-bottom:4px;line-height:1.4">—</div>
+          <div class="tb-row">
+            <label>Activity</label>
+            <input class="tb-field" id="hs-activity" type="number" min="0.001" step="0.1" value="1.0" style="width:52px"
+              oninput="S.updateHotspotCfg()"
+              onkeydown="if(event.key==='Enter')this.blur()">
+            <span style="color:var(--text3);font-size:10px">GBq</span>
+          </div>
+          <div class="tb-row">
+            <label>Floor</label>
+            <select class="tb-field" id="hs-floor" onchange="S.updateHotspotCfg()" style="font-size:10px">
+              <option value="basement">Basement</option>
+              <option value="ground" selected>Ground</option>
+              <option value="upper">2nd Floor</option>
+              <option value="upper2">3rd+ Floor</option>
+            </select>
+          </div>
+          <button class="tb-btn" id="tool-hotspot" onclick="S.setTool('hotspot')" style="margin-bottom:3px">
+            &#x2622; PLACE SOURCE <span class="kb">G</span>
+          </button>
+          <div id="hs-readout" style="display:none;padding:6px;background:var(--bg3);border:1px solid #ff6600;margin-top:2px">
+            <div style="color:#ff6600;font-size:9px;letter-spacing:1px;margin-bottom:2px">SOURCE ACTIVE</div>
+            <div style="color:#ffaa44;font-size:11px;font-weight:700"><span id="hs-dr-val">—</span> <span id="hs-dr-unit">uSv/hr</span></div>
+            <div style="color:var(--text3);font-size:9px;margin-top:1px" id="hs-pos-label">—</div>
+            <div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap">
+              <button class="rp-btn" style="font-size:9px" onclick="S.setHotspotDRUnit('uSv')">uSv/hr</button>
+              <button class="rp-btn" style="font-size:9px" onclick="S.setHotspotDRUnit('mSv')">mSv/hr</button>
+              <button class="rp-btn" style="font-size:9px" onclick="S.setHotspotDRUnit('mR')">mR/hr</button>
+              <button class="rp-btn danger" style="font-size:9px" onclick="S.clearHotspot()">CLEAR</button>
+            </div>
+          </div>
+          <div id="hs-place-hint" style="color:var(--text3);font-size:10px;margin-top:4px">Select PLACE SOURCE, then click anywhere on the canvas.</div>
+        </div>
+      </div>
+
+      <!-- Selected wall properties -->
+      <div class="tb-section">
+        <div class="tb-label">Selected Wall</div>
+        <div id="wall-props-empty" style="color:var(--text3);font-size:10px">No wall selected.<br>Draw a wall or click one.<br><br><span style="color:var(--text3)">Tip: walls attenuate radiation passing through them. Add openings in the Assembly tab (face A/B) to model doors and windows. Gaps between walls pass radiation freely.</span></div>
+        <div id="wall-props" style="display:none">
+          <div style="color:var(--text2);font-size:10px;margin-bottom:4px" id="wp-dims">—</div>
+          <div class="tb-row" style="margin-bottom:3px">
+            <label>Length</label>
+            <input class="tb-field" id="wp-length" type="number" min="1" step="0.5" style="width:52px"
+              oninput="S.setWallLength(parseFloat(this.value))"
+              onkeydown="if(event.key==='Enter')this.blur()">
+            <span style="color:var(--text3);font-size:10px" id="wp-length-unit">ft</span>
+          </div>
+          <div class="tb-row" style="margin-bottom:6px">
+            <label>Angle</label>
+            <input class="tb-field" id="wp-angle" type="number" min="-180" max="180" step="1" style="width:52px"
+              oninput="S.setWallAngle(parseFloat(this.value))"
+              onkeydown="if(event.key==='Enter')this.blur()">
+            <span style="color:var(--text3);font-size:10px">°</span>
+          </div>
+          <div style="color:var(--text3);font-size:10px;margin-bottom:6px">Openings (doors/windows): Assembly tab → face A or B → Quick-Add.</div>
+          <div style="color:var(--text3);font-size:9px;margin-bottom:6px;line-height:1.5">Wall shielding affects rooms that have walls in their line-of-sight. Gaps between walls let radiation through.</div>
+          <button class="rp-btn danger" onclick="S.deleteSelectedWall()">DELETE WALL</button>
+        </div>
+      </div>
+
+      <div class="tb-section">
+        <div class="tb-label">Building Config</div>
+        <div class="tb-row"><label>Has basement</label><input type="checkbox" id="cfg-basement" onchange="S.updateBuildingCfg()"></div>
+        <div class="tb-row">
+          <label>Bsmt depth</label>
+          <input class="tb-field" id="cfg-bsmt-depth" type="number" value="8" min="2" max="40" style="width:44px" onchange="S.updateBuildingCfg()">
+          <span style="color:var(--text3);font-size:10px" id="cfg-depth-unit">ft</span>
+        </div>
+        <div class="tb-row"><label>Soil type</label></div>
+        <select class="tb-field" id="cfg-soil" onchange="S.updateBuildingCfg()">
+          <option value="1600">Dry sand (1600 kg/m³)</option>
+          <option value="1800" selected>Moist soil (1800 kg/m³)</option>
+          <option value="2000">Wet clay (2000 kg/m³)</option>
+          <option value="1700">Gravel (1700 kg/m³)</option>
+        </select>
+        <div class="tb-row">
+          <label>Stories above grade</label>
+          <input class="tb-field" id="cfg-stories" type="number" value="1" min="1" max="10" style="width:40px" onchange="S.updateBuildingCfg()">
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <button id="btn-skyshine-toggle" class="tb-btn active" style="flex:1;margin-bottom:0;justify-content:space-between" onclick="S.toggleSkyshine()">
+            <span>&#9729; SKYSHINE</span>
+            <span id="skyshine-state-label" style="font-size:9px;color:var(--green)">ON</span>
+          </button>
+        </div>
+        <div id="skyshine-factor-row" class="tb-row" style="margin-bottom:4px">
+          <label>Sky factor</label>
+          <input class="tb-field" id="cfg-skyshine-val" type="number" value="0.25" min="0.05" max="0.50" step="0.01" style="width:46px"
+            onchange="S.updateBuildingCfg()"
+            onkeydown="if(event.key==='Enter')this.blur()">
+          <span style="color:var(--text3);font-size:9px;margin-left:2px;line-height:1.2">NCRP-165</span>
+        </div>
+        <!-- hidden checkbox kept for backwards compat with updateBuildingCfg -->
+        <input type="checkbox" id="cfg-skyshine" checked style="display:none">
+      </div>
+
+      <div class="tb-section">
+        <div class="tb-label">Selected Room</div>
+        <div id="room-props-empty" style="color:var(--text3);font-size:10px">No room selected.<br>Click a room or draw one.</div>
+        <div id="room-props" style="display:none">
+          <input class="tb-field" id="rp-name" type="text" placeholder="Room name" onchange="S.updateRoomProp('name',this.value)">
+          <div class="tb-row">
+            <label>Floor</label>
+            <select class="tb-field" id="rp-floor" onchange="S.updateRoomProp('floor',this.value)" style="font-size:10px">
+              <option value="basement">Basement</option>
+              <option value="ground" selected>Ground</option>
+              <option value="upper">2nd Floor</option>
+              <option value="upper2">3rd+ Floor</option>
+            </select>
+          </div>
+          <!-- Dimension editing -->
+          <div class="tb-row">
+            <label>Width</label>
+            <input class="tb-field" id="rp-width" type="number" min="4" step="1" style="width:52px"
+              onchange="S.setRoomDimension('w',parseFloat(this.value))"
+              onkeydown="if(event.key==='Enter')this.blur()">
+            <span style="color:var(--text3);font-size:10px" id="rp-width-unit">ft</span>
+          </div>
+          <div class="tb-row">
+            <label>Depth</label>
+            <input class="tb-field" id="rp-depth" type="number" min="4" step="1" style="width:52px"
+              onchange="S.setRoomDimension('h',parseFloat(this.value))"
+              onkeydown="if(event.key==='Enter')this.blur()">
+            <span style="color:var(--text3);font-size:10px" id="rp-depth-unit">ft</span>
+          </div>
+          <div class="tb-row">
+            <label>Wall ht</label>
+            <input class="tb-field" id="rp-wallht" type="number" value="8" min="5" max="24" step="0.5" style="width:44px"
+              onchange="S.updateRoomProp('wallHeight',parseFloat(this.value))"
+              onkeydown="if(event.key==='Enter')this.blur()">
+            <span style="color:var(--text3);font-size:10px" id="wallht-unit">ft</span>
+          </div>
+          <div class="tb-row">
+            <label>Occupancy</label>
+            <input class="tb-field" id="rp-occ" type="number" value="1" min="1" max="100" style="width:44px"
+              onchange="S.updateRoomProp('occupancy',parseInt(this.value))"
+              onkeydown="if(event.key==='Enter')this.blur()">
+          </div>
+          <div style="margin-top:2px">
+            <textarea class="tb-field" id="rp-notes" rows="2" placeholder="Notes..." style="resize:none;font-size:10px" onchange="S.updateRoomProp('notes',this.value)"></textarea>
+          </div>
+          <div style="color:var(--green);font-size:12px;font-weight:700;margin-top:4px">
+            PF: <span id="rp-pf">—</span>
+            <span id="rp-pf-label" style="font-size:10px;font-weight:400;color:var(--text3);margin-left:6px"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="drag-handle" id="drag-l" onmousedown="S.startDrag(event,'l')"></div>
+
+    <!-- canvas-area wraps the scrollable canvas + fixed overlays -->
+    <div id="canvas-area">
+      <div id="canvas-wrap">
+        <canvas id="main-canvas"></canvas>
+      </div>
+
+      <!-- Zoom controls: fixed to canvas-area, never scrolls -->
+      <div id="zoom-controls">
+        <button onclick="(()=>{const w=document.getElementById('canvas-wrap');S.zoomAtPoint(1.25,w.clientWidth/2,w.clientHeight/2);})()" title="Zoom in [+]">+</button>
+        <div id="zoom-level">100%</div>
+        <button onclick="(()=>{const w=document.getElementById('canvas-wrap');S.zoomAtPoint(1/1.25,w.clientWidth/2,w.clientHeight/2);})()" title="Zoom out [-]">−</button>
+        <button onclick="S.zoomReset()" title="Reset zoom [0]" style="font-size:9px;letter-spacing:-0.5px">FIT</button>
+      </div>
+
+      <!-- Collapsible key legend: fixed to canvas-area bottom-left -->
+      <div id="map-key">
+        <div id="map-key-header" onclick="S.toggleKey()">
+          <span style="font-size:9px;letter-spacing:1px;color:var(--text3)">// KEY</span>
+          <span id="map-key-arrow" style="color:var(--text3);font-size:10px;margin-left:4px">▲</span>
+        </div>
+        <div id="map-key-body">
+          <div class="key-row"><span class="key-swatch" style="background:#00ff41"></span><span>PF &ge;40 — good</span></div>
+          <div class="key-row"><span class="key-swatch" style="background:#ffb000"></span><span>PF 10–39 — fair</span></div>
+          <div class="key-row"><span class="key-swatch" style="background:#ff3333"></span><span>PF &lt;10 — poor</span></div>
+          <div class="key-row"><span class="key-swatch" style="background:#00ffcc"></span><span>neighbor-shielded</span></div>
+          <div class="key-row"><span class="key-swatch" style="background:#00cc33"></span><span>standalone wall</span></div>
+          <div class="key-row"><span class="key-swatch" style="background:#ffb000;opacity:0.5"></span><span>&#9729; skyshine active</span></div>
+          <div class="key-row" id="key-hotspot-row" style="display:none"><span class="key-swatch" style="background:linear-gradient(to right,#ffee00,#ff4400,#cc0000)"></span><span>&#x2622; source dose rate</span></div>
+          <div style="border-top:1px solid var(--border);margin-top:5px;padding-top:4px">
+            <div class="key-row" style="color:var(--text3)"><span style="display:inline-block;width:10px;height:4px;background:var(--border2);margin-right:6px;vertical-align:middle"></span><span>scale: 1 cell = 4ft</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="drag-handle" id="drag-r" onmousedown="S.startDrag(event,'r')"></div>
+
+    <div id="rpanel">
+      <div class="tab-bar">
+        <button class="tab active" onclick="S.switchTab('assembly')">ASSEM</button>
+        <button class="tab" onclick="S.switchTab('library')">LIB</button>
+        <button class="tab" onclick="S.switchTab('dose')">DOSE</button>
+        <button class="tab" onclick="S.switchTab('pfsummary')">PF</button>
+        <button class="tab" onclick="S.switchTab('rooms')">ROOMS</button>
+      </div>
+      <div class="tab-content">
+
+        <div class="tab-pane active" id="pane-assembly">
+          <div class="rp-label" style="margin-top:0">Surface Face</div>
+          <div class="face-btn-group">
+            <button class="face-btn active" id="face-N" onclick="S.selectFace('N')">N WALL</button>
+            <button class="face-btn" id="face-S" onclick="S.selectFace('S')">S WALL</button>
+            <button class="face-btn" id="face-E" onclick="S.selectFace('E')">E WALL</button>
+            <button class="face-btn" id="face-W" onclick="S.selectFace('W')">W WALL</button>
+            <button class="face-btn" id="face-R" onclick="S.selectFace('R')">ROOF</button>
+            <button class="face-btn" id="face-F" onclick="S.selectFace('F')">FLOOR</button>
+            <button class="face-btn" id="face-A" onclick="S.selectFace('A')">WALL A</button>
+            <button class="face-btn" id="face-B" onclick="S.selectFace('B')">WALL B</button>
+          </div>
+          <div id="face-info" style="color:var(--text3);font-size:10px;margin-bottom:6px">Select a room or wall to edit assemblies</div>
+          <div class="rp-label">Layer Stack (outside → inside)</div>
+          <div id="layer-stack"></div>
+          <div class="rp-row" style="margin-top:4px">
+            <select class="rp-field" id="add-mat-sel" style="flex:1;font-size:10px"></select>
+            <button class="rp-btn primary" onclick="S.addLayer()">+ ADD</button>
+          </div>
+          <div class="rp-label">Cross Section</div>
+          <div class="xsec-bar" id="xsec-bar"></div>
+          <div class="rp-label">Openings on This Face</div>
+          <div id="openings-list"></div>
+          <div style="margin-top:4px">
+            <div class="rp-label">Quick-Add Opening</div>
+            <div style="display:flex;flex-wrap:wrap;gap:3px">
+              <button class="rp-btn" onclick="S.addOpening('wood_door')">Wood Door</button>
+              <button class="rp-btn" onclick="S.addOpening('steel_hollow')">Steel Hollow</button>
+              <button class="rp-btn" onclick="S.addOpening('steel_solid')">Steel Solid</button>
+              <button class="rp-btn" onclick="S.addOpening('window')">Window</button>
+              <button class="rp-btn" onclick="S.addOpening('window_sand')">Win+Sand</button>
+              <button class="rp-btn" onclick="S.addOpening('window_ply')">Win+Ply</button>
+              <button class="rp-btn" onclick="S.addOpening('vent_open')">Vent Open</button>
+              <button class="rp-btn" onclick="S.addOpening('vent_sealed')">Vent Sealed</button>
+            </div>
+          </div>
+          <hr class="sep">
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <button class="rp-btn" onclick="S.copyFaceToAll()">COPY TO ALL FACES</button>
+            <button class="rp-btn primary" onclick="S.saveAssemblyToLib()">SAVE TO LIB</button>
+          </div>
+          <div id="asm-stats" style="margin-top:8px"></div>
+        </div>
+
+        <div class="tab-pane" id="pane-library">
+          <div class="rp-label" style="margin-top:0">Saved Assemblies</div>
+          <div id="lib-list"></div>
+          <div class="note">Select a room and face in the Assembly tab, then apply.</div>
+        </div>
+
+        <div class="tab-pane" id="pane-dose">
+          <div class="rp-row" style="margin-bottom:6px">
+            <label style="color:var(--text2);font-size:10px;min-width:50px">Mode</label>
+            <label style="font-size:10px;color:var(--text2)"><input type="radio" name="dose-mode" value="calc" checked onchange="S.updateDoseMode()"> Calculated</label>
+            <label style="font-size:10px;color:var(--text2);margin-left:10px"><input type="radio" name="dose-mode" value="manual" onchange="S.updateDoseMode()"> Manual DR(1)</label>
+          </div>
+          <div id="dose-calc-inputs">
+            <div class="slider-row">
+              <label>Yield</label>
+              <input type="range" id="sl-yield" min="0.1" max="2000" value="10" step="0.1" oninput="S.syncSlider('yield',this.value)">
+              <input class="sval" id="nv-yield" type="number" value="10" min="0.01" step="0.1" oninput="S.syncNum('yield',this.value)">
+              <span style="color:var(--text3);font-size:10px;margin-left:2px">kT</span>
+            </div>
+            <div class="slider-row">
+              <label>Distance</label>
+              <input type="range" id="sl-dist" min="0.5" max="100" value="5" step="0.5" oninput="S.syncSlider('dist',this.value)">
+              <input class="sval" id="nv-dist" type="number" value="5" min="0.1" step="0.5" oninput="S.syncNum('dist',this.value)">
+              <span style="color:var(--text3);font-size:10px;margin-left:2px" id="dist-unit">mi</span>
+            </div>
+            <div class="rp-row">
+              <label>Burst type</label>
+              <select class="rp-field" id="burst-type" onchange="S.calcDose()">
+                <option value="surface">Surface burst</option>
+                <option value="airburst">Airburst</option>
+              </select>
+            </div>
+            <div class="slider-row">
+              <label>Wind speed</label>
+              <input type="range" id="sl-wind" min="1" max="80" value="15" step="1" oninput="S.syncSlider('wind',this.value)">
+              <input class="sval" id="nv-wind" type="number" value="15" min="1" step="1" oninput="S.syncNum('wind',this.value)">
+              <span style="color:var(--text3);font-size:10px;margin-left:2px">mph</span>
+            </div>
+          </div>
+          <div id="dose-manual-inputs" style="display:none">
+            <div class="slider-row">
+              <label>DR(1) R/hr</label>
+              <input type="range" id="sl-dr1" min="1" max="10000" value="300" step="1" oninput="S.syncSlider('dr1',this.value)">
+              <input class="sval" id="nv-dr1" type="number" value="300" min="0.01" step="1" oninput="S.syncNum('dr1',this.value)">
+            </div>
+          </div>
+          <hr class="sep">
+          <div class="slider-row">
+            <label>Entry time</label>
+            <input type="range" id="sl-entry" min="0.5" max="168" value="1" step="0.5" oninput="S.syncSlider('entry',this.value)">
+            <input class="sval" id="nv-entry" type="number" value="1" min="0.5" step="0.5" oninput="S.syncNum('entry',this.value)">
+            <span style="color:var(--text3);font-size:10px;margin-left:2px">H+hr</span>
+          </div>
+          <div class="slider-row">
+            <label>Duration</label>
+            <input type="range" id="sl-dur" min="1" max="336" value="24" step="1" oninput="S.syncSlider('dur',this.value)">
+            <input class="sval" id="nv-dur" type="number" value="24" min="0.5" step="1" oninput="S.syncNum('dur',this.value)">
+            <span style="color:var(--text3);font-size:10px;margin-left:2px">hr</span>
+          </div>
+          <div class="rp-row">
+            <label>Output unit</label>
+            <select class="rp-field" id="dose-unit" onchange="S.calcDose()">
+              <option value="R">R (Roentgen)</option>
+              <option value="rad">rad</option>
+              <option value="rem">rem</option>
+              <option value="Gy">Gy</option>
+              <option value="Sv">Sv</option>
+              <option value="mGy">mGy</option>
+              <option value="mSv">mSv</option>
+              <option value="mR">mR</option>
+            </select>
+          </div>
+          <div id="dose-results" style="margin-top:8px"></div>
+        </div>
+
+        <div class="tab-pane" id="pane-pfsummary">
+          <div id="pf-summary-content"></div>
+          <hr class="sep">
+          <div class="rp-label">Protection Factor Key (FEMA REP-10)</div>
+
+          <!-- PF color bands -->
+          <div style="display:flex;margin-bottom:6px;border:1px solid var(--border);overflow:hidden">
+            <div style="flex:1;padding:5px 4px;background:rgba(255,51,51,0.12);border-right:1px solid var(--border)">
+              <div style="color:#ff3333;font-size:13px;font-weight:700">PF &lt;10</div>
+              <div style="color:var(--text3);font-size:9px;line-height:1.5">POOR<br>Minimal protection. Little better than outdoors.</div>
+            </div>
+            <div style="flex:1;padding:5px 4px;background:rgba(255,176,0,0.12);border-right:1px solid var(--border)">
+              <div style="color:#ffb000;font-size:13px;font-weight:700">PF 10–39</div>
+              <div style="color:var(--text3);font-size:9px;line-height:1.5">FAIR<br>Meaningful reduction. Buys shelter time.</div>
+            </div>
+            <div style="flex:1;padding:5px 4px;background:rgba(0,255,65,0.08)">
+              <div style="color:#00ff41;font-size:13px;font-weight:700">PF ≥40</div>
+              <div style="color:var(--text3);font-size:9px;line-height:1.5">GOOD<br>Substantial protection. Target for sheltering.</div>
+            </div>
+          </div>
+
+          <div class="rp-label" style="margin-top:6px">FEMA REP-10 Benchmarks</div>
+          <div class="pf-ref-row"><span class="pf-val pf-red">1</span><span>Open field — no protection</span></div>
+          <div class="pf-ref-row"><span class="pf-val pf-red">2</span><span>Wood frame house, ground floor</span></div>
+          <div class="pf-ref-row"><span class="pf-val pf-red">3</span><span>Brick veneer, ground floor</span></div>
+          <div class="pf-ref-row"><span class="pf-val pf-yellow">5–10</span><span>Brick/block exterior, ground floor</span></div>
+          <div class="pf-ref-row"><span class="pf-val pf-yellow">10–20</span><span>Basement of wood frame home</span></div>
+          <div class="pf-ref-row"><span class="pf-val pf-green">20–50</span><span>Basement of masonry home</span></div>
+          <div class="pf-ref-row"><span class="pf-val pf-green">40+</span><span>Reinforced concrete basement</span></div>
+          <div class="pf-ref-row"><span class="pf-val pf-green">100+</span><span>Purpose-built fallout shelter</span></div>
+          <div class="pf-ref-row"><span class="pf-val pf-green">1000+</span><span>Deep reinforced concrete bunker</span></div>
+
+          <div class="rp-label" style="margin-top:8px">Dose Pathways Modeled</div>
+          <div style="background:var(--bg3);border:1px solid var(--border);padding:7px 8px;font-size:10px;color:var(--text2);line-height:1.75">
+            <div><span style="color:var(--green)">▸ Ground-shine</span> — dominant path. Gamma from fallout deposited on soil, attenuated by wall mass. Accounts for ~50% of dose on ground floor (geometry-weighted).</div>
+            <div style="margin-top:4px"><span style="color:var(--amber)">▸ Skyshine ☁</span> — scattered gamma arriving from sky hemisphere (not ground). Adds ~15–40% of open-field dose through the roof, even through thick material. Modeled per NCRP-165 as a fixed fraction (f_sky) × roof transmission. Ground floor only.</div>
+            <div style="margin-top:4px"><span style="color:var(--teal)">▸ Neighbor shielding</span> — adjacent rooms on the same floor add extra wall mass between you and the source. Detected automatically; shown in teal on room edges.</div>
+            <div style="margin-top:4px"><span style="color:var(--text2)">▸ Floor/slab attenuation</span> — the floor slab partially shields upwelling ground-shine. Modeled as ~50% geometric reduction for ground floor.</div>
+            <div style="margin-top:4px"><span style="color:var(--text2)">▸ Basement soil shielding</span> — below-grade soil attenuates gamma exponentially. Deeper basements in denser soil dramatically raise PF.</div>
+          </div>
+
+          <div class="rp-label" style="margin-top:8px">Floor Level Effects</div>
+          <div style="background:var(--bg3);border:1px solid var(--border);font-size:10px">
+            <div class="pf-ref-row" style="border-bottom:1px solid var(--border)"><span style="color:var(--green);min-width:50px;font-weight:700">BSMT</span><span style="color:var(--text2)">Best protection. Soil shielding on all sides. Depth multiplies PF.</span></div>
+            <div class="pf-ref-row" style="border-bottom:1px solid var(--border)"><span style="color:var(--amber);min-width:50px;font-weight:700">GND</span><span style="color:var(--text2)">Moderate. Skyshine and direct ground-shine both apply. Wall mass critical.</span></div>
+            <div class="pf-ref-row" style="border-bottom:1px solid var(--border)"><span style="color:var(--red);min-width:50px;font-weight:700">2ND</span><span style="color:var(--text2)">Floor path reduced to 10% (no ground contact). Overhead path still exposed.</span></div>
+            <div class="pf-ref-row"><span style="color:var(--red);min-width:50px;font-weight:700">3RD+</span><span style="color:var(--text2)">Floor path 3%. Roof exposure significant. Upper floors perform poorly.</span></div>
+          </div>
+
+          <div class="note" style="margin-top:6px">PF = 1/dose_fraction. A PF of 10 means 1/10th the outdoor dose rate. Not all pathways are modeled (HVAC, streaming, scatter through openings). Values are approximations — use for relative comparison and planning.</div>
+        </div>
+
+        <div class="tab-pane" id="pane-rooms">
+          <div class="rp-label" style="margin-top:0">All Rooms — All Floors</div>
+          <div id="rooms-list"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="statusbar">
+    <span id="sb-tool" class="sb-green">TOOL: SELECT</span>
+    <span id="sb-floor" style="color:var(--amber)">FLOOR: GROUND</span>
+    <span id="sb-cursor">—</span>
+    <span id="sb-room" style="color:var(--text2)">No room selected</span>
+    <span class="spacer" style="flex:1"></span>
+    <span id="sb-snap" style="color:var(--teal);display:none">⚡ SNAP</span>
+    <span id="sb-undo" style="color:var(--text3)">Undo: 0</span>
+    <span id="sb-rooms-count">Rooms: 0</span>
+  </div>
+</div>
+
+<script>
+const S = (function(){
+'use strict';
+
+const state = {
+  units: 'imperial',
+  floor: 'ground',
+  tool: 'select',
+  rooms: [],
+  walls: [],           // NEW: standalone wall segments
+  selectedRoom: null,
+  selectedWall: null,  // NEW
+  selectedFace: 'N',
+  undoStack: [],
+  redoStack: [],
+  buildingCfg: {
+    hasBasement: false,
+    bsmtDepth: 8,
+    soilDensity: 1800,
+    aboveGradeStories: 1,
+    skyShineFactor: 0.25   // NCRP-165 sky-scatter fraction (0=off, 0.15-0.40 typical)
+  },
+  lib: [],
+  dose: {
+    yield: 10, dist: 5, wind: 15, dr1: 300,
+    entry: 1, duration: 24,
+    mode: 'calc', unit: 'R',
+    burst: 'surface'
+  },
+  zoom: 1.0,
+  activeTab: 'assembly',
+  ctxMenuTarget: null,
+  drawState: { active: false, startC: 0, startR: 0, curC: 0, curR: 0 },
+  // NEW: wall draw state with snap info
+  wallDrawState: { active: false, startC: 0, startR: 0, curC: 0, curR: 0, snapStart: null, snapEnd: null },
+  moveState: { active: false, room: null, startC: 0, startR: 0, origX: 0, origY: 0 },
+  // NEW: wall move state
+  wallMoveState: { active: false, wall: null, startC: 0, startR: 0, origX1: 0, origY1: 0, origX2: 0, origY2: 0 },
+  heatmap: { enabled: true, res: 2, mode: 'pf', dirty: true },
+  person: { active: false, c: 0, r: 0, floor: 'ground' },
+  floorplan: { dataUrl: null, opacity: 0.35, enabled: true },  // background image
+  // Gamma hot spot: point source tracing (default off)
+  hotspot: {
+    enabled: false,       // master toggle — off by default
+    active: false,        // source placed on canvas
+    c: 0, r: 0,           // position in grid cells
+    floor: 'ground',
+    isotope: 'cs137',     // selected isotope id
+    activityGBq: 1.0,     // activity in GBq
+    dirty: true           // needs re-render
+  }
+};
+
+const GRID_COLS = 100, GRID_ROWS = 100, FT_PER_CELL = 4;
+const SNAP_RADIUS = 1.8; // grid cells
+
+function getBaseCellSize(){
+  const wrap = document.getElementById('canvas-area');
+  const sw = wrap.clientWidth  / GRID_COLS;
+  const sh = wrap.clientHeight / GRID_ROWS;
+  return Math.max(Math.min(sw, sh), 24);
+}
+function getCellSize(){ return Math.round(getBaseCellSize() * state.zoom); }
+
+const FLOOR_META = {
+  basement: { label: 'BASEMENT', short: 'BSMT', order: 0 },
+  ground:   { label: 'GROUND FLOOR', short: 'GND', order: 1 },
+  upper:    { label: '2ND FLOOR', short: '2ND', order: 2 },
+  upper2:   { label: '3RD+ FLOOR', short: '3RD+', order: 3 }
+};
+
+const MATERIALS = [
+  {id:'concrete_2',  label:'Concrete 2"',   cat:'Structural', rho:2300, thickness:0.051, mu:0.0761},
+  {id:'concrete_4',  label:'Concrete 4"',   cat:'Structural', rho:2300, thickness:0.102, mu:0.0761},
+  {id:'concrete_6',  label:'Concrete 6"',   cat:'Structural', rho:2300, thickness:0.152, mu:0.0761},
+  {id:'concrete_8',  label:'Concrete 8"',   cat:'Structural', rho:2300, thickness:0.203, mu:0.0761},
+  {id:'concrete_12', label:'Concrete 12"',  cat:'Structural', rho:2300, thickness:0.305, mu:0.0761},
+  {id:'concrete_16', label:'Concrete 16"',  cat:'Structural', rho:2300, thickness:0.406, mu:0.0761},
+  {id:'brick_4',         label:'Brick 4"',            cat:'Structural', rho:1920, thickness:0.102, mu:0.0757},
+  {id:'brick_8',         label:'Brick 8"',            cat:'Structural', rho:1920, thickness:0.203, mu:0.0757},
+  {id:'cmu_8_hollow',    label:'CMU 8" hollow',       cat:'Structural', rho:960,  thickness:0.203, mu:0.0761},
+  {id:'cmu_8_grouted',   label:'CMU 8" grouted',      cat:'Structural', rho:1760, thickness:0.203, mu:0.0761},
+  {id:'stone_8',         label:'Stone/granite 8"',    cat:'Structural', rho:2650, thickness:0.203, mu:0.0757},
+  {id:'rammed_earth_8',  label:'Rammed earth 8"',     cat:'Structural', rho:1900, thickness:0.203, mu:0.0786},
+  {id:'stud_2x4',      label:'Wood stud 2x4',    cat:'Framing',    rho:500, thickness:0.089, mu:0.0868},
+  {id:'stud_2x6',      label:'Wood stud 2x6',    cat:'Framing',    rho:500, thickness:0.140, mu:0.0868},
+  {id:'plywood_38',    label:'Plywood 3/8"',     cat:'Sheathing',  rho:560, thickness:0.010, mu:0.0868},
+  {id:'plywood_half',  label:'Plywood 1/2"',     cat:'Sheathing',  rho:560, thickness:0.013, mu:0.0868},
+  {id:'plywood_3q',    label:'Plywood 3/4"',     cat:'Sheathing',  rho:560, thickness:0.019, mu:0.0868},
+  {id:'osb_half',      label:'OSB 1/2"',         cat:'Sheathing',  rho:640, thickness:0.013, mu:0.0868},
+  {id:'lumber_2x4',    label:'Lumber 2x4 (3.5")',cat:'Framing',    rho:480, thickness:0.089, mu:0.0868},
+  {id:'steel_stud',          label:'Steel stud 20ga',   cat:'Framing',    rho:7850, thickness:0.001, mu:0.0731},
+  {id:'steel_plate_eighth',  label:'Steel plate 1/8"',  cat:'Structural', rho:7850, thickness:0.003, mu:0.0731},
+  {id:'steel_plate_quarter', label:'Steel plate 1/4"',  cat:'Structural', rho:7850, thickness:0.006, mu:0.0731},
+  {id:'steel_plate_half',    label:'Steel plate 1/2"',  cat:'Structural', rho:7850, thickness:0.013, mu:0.0731},
+  {id:'lead_116',  label:'Lead 1/16"',  cat:'Structural', rho:11340, thickness:0.002, mu:0.1101},
+  {id:'lead_eighth',label:'Lead 1/8"', cat:'Structural', rho:11340, thickness:0.003, mu:0.1101},
+  {id:'lead_quarter',label:'Lead 1/4"',cat:'Structural', rho:11340, thickness:0.006, mu:0.1101},
+  // Lead sheeting for floor/ceiling overlays
+  {id:'lead_eighth_floor',label:'Lead sheet 1/8" (floor/ceil)',cat:'Floor', rho:11340, thickness:0.003, mu:0.1101},
+  {id:'lead_eighth_roof', label:'Lead sheet 1/8" (roof/slab)', cat:'Slab/Roof', rho:11340, thickness:0.003, mu:0.1101},
+  {id:'drywall_half', label:'Drywall 1/2"',    cat:'Interior', rho:800,  thickness:0.013, mu:0.0812},
+  {id:'drywall_58',   label:'Drywall 5/8"',    cat:'Interior', rho:800,  thickness:0.016, mu:0.0812},
+  {id:'plaster_3q',   label:'Plaster 3/4"',    cat:'Interior', rho:1050, thickness:0.019, mu:0.0812},
+  {id:'tile_ceramic', label:'Ceramic tile 3/8"',cat:'Interior', rho:2200, thickness:0.010, mu:0.0757},
+  {id:'fiberglass_35', label:'Fiberglass batt 3.5"', cat:'Insulation', rho:16, thickness:0.089, mu:0.0868},
+  {id:'fiberglass_55', label:'Fiberglass batt 5.5"', cat:'Insulation', rho:16, thickness:0.140, mu:0.0868},
+  {id:'rigid_foam_1',  label:'Rigid foam 1"',        cat:'Insulation', rho:32, thickness:0.025, mu:0.0868},
+  {id:'rigid_foam_2',  label:'Rigid foam 2"',        cat:'Insulation', rho:32, thickness:0.051, mu:0.0868},
+  {id:'mineral_wool',  label:'Mineral wool 3.5"',    cat:'Insulation', rho:64, thickness:0.089, mu:0.0868},
+  {id:'air_gap_1',  label:'Air gap 1"',  cat:'Other', rho:1.225, thickness:0.025, mu:0.0779},
+  {id:'air_gap_4',  label:'Air gap 4"',  cat:'Other', rho:1.225, thickness:0.102, mu:0.0779},
+  {id:'concrete_slab_4', label:'Concrete slab 4"', cat:'Slab/Roof', rho:2300, thickness:0.102, mu:0.0761},
+  {id:'concrete_slab_6', label:'Concrete slab 6"', cat:'Slab/Roof', rho:2300, thickness:0.152, mu:0.0761},
+  {id:'concrete_slab_8', label:'Concrete slab 8"', cat:'Slab/Roof', rho:2300, thickness:0.203, mu:0.0761},
+  {id:'wood_joist',      label:'Wood joist assembly (7.25")', cat:'Slab/Roof', rho:480, thickness:0.184, mu:0.0868},
+  {id:'metal_deck',      label:'Metal deck 22ga',  cat:'Slab/Roof', rho:7850, thickness:0.001, mu:0.0731},
+  {id:'roof_shingles',   label:'Asphalt shingles', cat:'Slab/Roof', rho:1100, thickness:0.010, mu:0.0812},
+  {id:'soil_4',   label:'Soil/earth 4"',  cat:'Earth', rho:1800, thickness:0.102, mu:0.0786},
+  {id:'soil_6',   label:'Soil/earth 6"',  cat:'Earth', rho:1800, thickness:0.152, mu:0.0786},
+  {id:'soil_12',  label:'Soil/earth 12"', cat:'Earth', rho:1800, thickness:0.305, mu:0.0786},
+  {id:'soil_24',  label:'Soil/earth 24"', cat:'Earth', rho:1800, thickness:0.610, mu:0.0786},
+  {id:'soil_36',  label:'Soil/earth 36"', cat:'Earth', rho:1800, thickness:0.914, mu:0.0786},
+  {id:'wood_subfloor',  label:'Wood subfloor 3/4"', cat:'Floor', rho:500,  thickness:0.019, mu:0.0868},
+  {id:'sand_12',        label:'Sandbags 12"',       cat:'Floor', rho:1800, thickness:0.305, mu:0.0786},
+  {id:'gravel_4',       label:'Gravel/crushed stone 4"', cat:'Floor', rho:1700, thickness:0.102, mu:0.0786},
+  {id:'water_6',  label:'Water 6"',  cat:'Other', rho:1000, thickness:0.152, mu:0.0857},
+  {id:'water_12', label:'Water 12"', cat:'Other', rho:1000, thickness:0.305, mu:0.0857},
+];
+
+const OPENING_TYPES = {
+  wood_door:    {label:'Wood door (solid-core)',    T:0.80, w:0.91, h:2.03},
+  steel_hollow: {label:'Steel door (hollow)',       T:0.45, w:0.91, h:2.03},
+  steel_solid:  {label:'Steel door (solid core)',   T:0.20, w:0.91, h:2.03},
+  double_steel: {label:'Double steel door',         T:0.12, w:1.83, h:2.03},
+  window:       {label:'Window (unblocked glass)',  T:0.95, w:0.91, h:1.07},
+  window_sand:  {label:'Window (sandbag blocked)',  T:0.05, w:0.91, h:1.07},
+  window_ply:   {label:'Window (plywood 3/4" blk)',T:0.50, w:0.91, h:1.07},
+  vent_open:    {label:'Vent/penetration (open)',   T:1.00, w:0.30, h:0.30},
+  vent_sealed:  {label:'Vent (filtered/sealed)',    T:0.25, w:0.30, h:0.30},
+};
+
+let _uid = 100;
+function uid(){ return 'u' + (++_uid) + '_' + Math.floor(Math.random()*99999); }
+function matById(id){ return MATERIALS.find(m=>m.id===id) || MATERIALS[0]; }
+
+// ============================================================
+// GAMMA HOT SPOT — point source isotope data
+// Dose rate constant Gamma (uSv/hr per MBq at 1 metre in air, no shielding)
+// from ICRP/NNDC standard values. mu_eff = effective attenuation coeff (cm^2/g)
+// used for buildup-corrected attenuation through materials at this energy.
+// ============================================================
+const ISOTOPES = [
+  { id:'cs137',   label:'Cs-137 (30y)',     gamma_uSv_MBq_1m: 0.0785,  mu_eff: 0.0761,  energy_MeV: 0.662,  note:'Fallout, industrial gauges' },
+  { id:'co60',    label:'Co-60 (5.3y)',      gamma_uSv_MBq_1m: 0.309,   mu_eff: 0.0580,  energy_MeV: 1.25,   note:'Radiography, high-energy' },
+  { id:'i131',    label:'I-131 (8d)',         gamma_uSv_MBq_1m: 0.0595,  mu_eff: 0.0850,  energy_MeV: 0.364,  note:'Reactor accident, thyroid' },
+  { id:'ir192',   label:'Ir-192 (74d)',       gamma_uSv_MBq_1m: 0.113,   mu_eff: 0.0720,  energy_MeV: 0.38,   note:'Industrial radiography' },
+  { id:'ra226',   label:'Ra-226 (1600y)',     gamma_uSv_MBq_1m: 0.195,   mu_eff: 0.0650,  energy_MeV: 0.80,   note:'Legacy NORM, luminescent paint' },
+  { id:'eu152',   label:'Eu-152 (13y)',       gamma_uSv_MBq_1m: 0.143,   mu_eff: 0.0700,  energy_MeV: 0.60,   note:'Reactor activation product' },
+  { id:'na22',    label:'Na-22 (2.6y)',       gamma_uSv_MBq_1m: 0.312,   mu_eff: 0.0570,  energy_MeV: 1.27,   note:'Positron emitter, medical/research' },
+  { id:'am241',   label:'Am-241 (432y)',      gamma_uSv_MBq_1m: 0.0305,  mu_eff: 0.1650,  energy_MeV: 0.060,  note:'Smoke detectors (low energy)' },
+  { id:'ba133',   label:'Ba-133 (10.5y)',     gamma_uSv_MBq_1m: 0.0580,  mu_eff: 0.1200,  energy_MeV: 0.356,  note:'Calibration source' },
+  { id:'generic_low',  label:'Generic low-E (80 keV)',  gamma_uSv_MBq_1m: 0.030, mu_eff: 0.170, energy_MeV: 0.080, note:'Low-energy representative' },
+  { id:'generic_high', label:'Generic high-E (1.5 MeV)',gamma_uSv_MBq_1m: 0.350, mu_eff: 0.054, energy_MeV: 1.50,  note:'High-energy representative' },
+];
+
+function isotopeById(id){ return ISOTOPES.find(i=>i.id===id)||ISOTOPES[0]; }
+
+// Buildup factor B(mu*r) — Berger form, approx for concrete/water-like materials
+// For a point source, scattered photons add to dose; B corrects for this.
+// Using Taylor form: B = A*exp(alpha1*mu_r) + (1-A)*exp(alpha2*mu_r)
+// Simplified: B ~ 1 + mu_r for mu_r < 3, capped at 8 for deep penetration
+function buildupFactor(mu_eff_cm2g, rho_gcm3, dist_m){
+  const mu_r = mu_eff_cm2g * rho_gcm3 * dist_m * 100; // dimensionless mean free paths
+  // Simple Berger approximation valid for concrete/soil-like media
+  return Math.min(8.0, 1.0 + mu_r * (0.8 + 0.06 * mu_r));
+}
+
+// Compute dose rate (uSv/hr) at a canvas point (px_c, px_r) in grid cells,
+// from a point source at (src_c, src_r) with given activity and isotope,
+// accounting for inverse square law + attenuation through walls and room faces.
+// Both source and point are on the same floor.
+function hotspotDoseAt(px_c, px_r, src_c, src_r, floor, iso, actMBq){
+  const ft2m = 0.3048;
+  const dx_cells = px_c - src_c;
+  const dy_cells = px_r - src_r;
+  const dist_cells = Math.sqrt(dx_cells*dx_cells + dy_cells*dy_cells);
+  const dist_m = Math.max(0.1 * FT_PER_CELL * ft2m, dist_cells * FT_PER_CELL * ft2m);
+
+  // Unshielded DR (inverse square only)
+  const DR_unshielded = (actMBq * iso.gamma_uSv_MBq_1m) / (dist_m * dist_m);
+
+  // Ray direction from source to pixel
+  const len = dist_cells || 1e-9;
+  const ux = dx_cells / len, uy = dy_cells / len;
+
+  // Ray endpoint just past the target pixel
+  const FAR = dist_cells + 0.01;
+  const ex = src_c + ux * FAR, ey = src_r + uy * FAR;
+
+  // Attenuation through standalone walls
+  let T_walls = 1.0;
+  for(const w of state.walls){
+    if(w.floor !== floor) continue;
+    const hit = segSegIntersect(src_c, src_r, ex, ey, w.x1, w.y1, w.x2, w.y2);
+    if(!hit) continue;
+    const wdx = w.x2-w.x1, wdy = w.y2-w.y1;
+    const cross = wdx*uy - wdy*ux;
+    const face = cross > 0 ? w.faces.A : w.faces.B;
+    T_walls *= effectiveWallT(face, WALL_AREA_M2);
+  }
+
+  // Attenuation through room walls
+  // Uses both enter and exit crossings — each wall face the ray crosses attenuates it
+  let T_rooms = 1.0;
+  for(const room of state.rooms){
+    if(room.floor !== floor) continue;
+    const rx1=room.x, ry1=room.y, rx2=room.x+room.w, ry2=room.y+room.h;
+    const wallHt_m = room.wallHeight * ft2m;
+    const edges = [
+      { x1:rx1,y1:ry1, x2:rx2,y2:ry1, fKey:'N', area:(room.w*FT_PER_CELL*ft2m)*wallHt_m },
+      { x1:rx1,y1:ry2, x2:rx2,y2:ry2, fKey:'S', area:(room.w*FT_PER_CELL*ft2m)*wallHt_m },
+      { x1:rx2,y1:ry1, x2:rx2,y2:ry2, fKey:'E', area:(room.h*FT_PER_CELL*ft2m)*wallHt_m },
+      { x1:rx1,y1:ry1, x2:rx1,y2:ry2, fKey:'W', area:(room.h*FT_PER_CELL*ft2m)*wallHt_m },
+    ];
+    for(const edge of edges){
+      const hit = segSegIntersect(src_c, src_r, ex, ey, edge.x1, edge.y1, edge.x2, edge.y2);
+      if(!hit) continue;
+      T_rooms *= effectiveWallT(room.faces[edge.fKey], edge.area);
+    }
+  }
+
+  const T_total = T_walls * T_rooms;
+
+  // Buildup factor (Berger approximation, air path)
+  const B = buildupFactor(iso.mu_eff, 0.0012, dist_m);
+
+  return {
+    shielded: DR_unshielded * T_total * B,
+    unshielded: DR_unshielded * B,
+    T: T_total
+  };
+}
+
+// Color mapping for hotspot overlay.
+// Uses a DUAL encoding:
+//   - Brightness/hue encodes the unshielded dose rate (how close to source)
+//   - Darkness/desaturation encodes the shielding fraction (wall shadow)
+// This makes wall shadows dramatically visible regardless of activity level.
+function hotspotColor(shielded, unshielded){
+  if(unshielded < 0.05) return null; // too far from source
+  // Attenuation fraction (how much is blocked)
+  const T = Math.max(0, Math.min(1, shielded / Math.max(unshielded, 1e-12)));
+  // Unshielded intensity: log scale 0.05 -> 100000 uSv/hr
+  const logMin=Math.log10(0.05), logMax=Math.log10(100000);
+  const intensity=Math.max(0,Math.min(1,(Math.log10(Math.max(unshielded,0.05))-logMin)/(logMax-logMin)));
+  // Base color: yellow-orange-red gradient by intensity
+  let r,g,b;
+  if(intensity<0.4){ const s=intensity/0.4; r=255; g=Math.round(255*(1-s*0.65)); b=0; }
+  else if(intensity<0.75){ const s=(intensity-0.4)/0.35; r=255; g=Math.round(255*0.35*(1-s)); b=0; }
+  else { const s=(intensity-0.75)/0.25; r=Math.round(255*(1-s*0.25)); g=0; b=Math.round(s*60); }
+  // Apply shielding: T=1 (no shielding) = full color, T=0 (fully blocked) = dark/transparent
+  // Use T^0.35 power curve to make even small attenuation visible
+  const att = Math.pow(T, 0.35);
+  const alpha = 0.75 * att + 0.05; // minimum 5% opacity so shadows are visible as cool tones
+  // Shift hue toward blue as attenuation increases (warm->cool shadow effect)
+  const coolShift = (1-att);
+  r = Math.round(r*(1-coolShift*0.6));
+  g = Math.round(g*(1-coolShift*0.3) + coolShift*30);
+  b = Math.round(b + coolShift*120);
+  return `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
+}
+
+// ============================================================
+// FAST PIXEL COLOR PACKERS (perf path)
+// Identical math to the rgba() string functions above, but pack
+// the result into a single 32-bit value (0xAABBGGRR, little-endian)
+// so the heatmap/hotspot rasterizer can write one Uint32 per pixel
+// instead of stringifying rgba() and calling fillRect per cell.
+// ============================================================
+function pfToHeatmapU32(pf){
+  const logMin=0,logMax=Math.log10(1000);
+  const t=Math.max(0,Math.min(1,(Math.log10(Math.max(pf,1))-logMin)/logMax));
+  let r,g,b;
+  if(t<0.33){const s=t/0.33;r=255;g=(s*176)|0;b=0;}
+  else if(t<0.66){const s=(t-0.33)/0.33;r=(255*(1-s*0.6))|0;g=(176+s*79)|0;b=0;}
+  else{const s=(t-0.66)/0.34;r=(102*(1-s))|0;g=255;b=(s*65)|0;}
+  // alpha 0.55 -> 140
+  return (140<<24) | (b<<16) | (g<<8) | r;
+}
+function hotspotColorU32(shielded, unshielded){
+  if(unshielded < 0.05) return 0;
+  const T = shielded / Math.max(unshielded, 1e-12);
+  const Tc = T<0?0:(T>1?1:T);
+  const logMin=Math.log10(0.05), logMax=Math.log10(100000);
+  const u = unshielded < 0.05 ? 0.05 : unshielded;
+  let intensity = (Math.log10(u)-logMin)/(logMax-logMin);
+  if(intensity<0) intensity=0; else if(intensity>1) intensity=1;
+  let r,g,b;
+  if(intensity<0.4){ const s=intensity/0.4; r=255; g=(255*(1-s*0.65))|0; b=0; }
+  else if(intensity<0.75){ const s=(intensity-0.4)/0.35; r=255; g=(255*0.35*(1-s))|0; b=0; }
+  else { const s=(intensity-0.75)/0.25; r=(255*(1-s*0.25))|0; g=0; b=(s*60)|0; }
+  const att = Math.pow(Tc, 0.35);
+  const alpha = 0.75 * att + 0.05;
+  const coolShift = 1-att;
+  r = (r*(1-coolShift*0.6))|0;
+  g = ((g*(1-coolShift*0.3)) + coolShift*30)|0;
+  b = (b + coolShift*120)|0;
+  if(r>255)r=255; else if(r<0)r=0;
+  if(g>255)g=255; else if(g<0)g=0;
+  if(b>255)b=255; else if(b<0)b=0;
+  const a = (alpha*255)|0;
+  return (a<<24) | (b<<16) | (g<<8) | r;
+}
+
+function defaultFace(faceKey){
+  let layers = [];
+  if(faceKey==='F') layers=[{matId:'concrete_slab_4',id:uid()}];
+  else if(faceKey==='R') layers=[{matId:'wood_joist',id:uid()},{matId:'plywood_half',id:uid()}];
+  else layers=[{matId:'stud_2x4',id:uid()},{matId:'drywall_half',id:uid()}];
+  return {layers, openings:[]};
+}
+
+function defaultRoom(x,y,w,h,floor){
+  const faces={};
+  ['N','S','E','W','R','F'].forEach(f=>faces[f]=defaultFace(f));
+  return {id:uid(),name:'Room',floor,x,y,w,h,wallHeight:8,occupancy:1,notes:'',faces};
+}
+
+// -- NEW: Standalone wall --
+function defaultWallFace(){
+  return {layers:[{matId:'stud_2x4',id:uid()},{matId:'drywall_half',id:uid()}], openings:[]};
+}
+function defaultWall(x1,y1,x2,y2,floor){
+  return {id:uid(),floor,x1,y1,x2,y2,faces:{A:defaultWallFace(),B:defaultWallFace()}};
+}
+
+// -- Snap detection --
+function findSnapPoint(c, r, excludeWallId){
+  let best=null, bestDist=SNAP_RADIUS;
+  // Snap to other wall endpoints
+  for(const w of state.walls){
+    if(w.id===excludeWallId)continue;
+    if(w.floor!==state.floor)continue;
+    for(const [ec,er] of [[w.x1,w.y1],[w.x2,w.y2]]){
+      const d=Math.sqrt((c-ec)**2+(r-er)**2);
+      if(d<bestDist){bestDist=d;best={c:ec,r:er};}
+    }
+  }
+  // Snap to room corners and edge midpoints
+  for(const room of state.rooms){
+    if(room.floor!==state.floor)continue;
+    const corners=[[room.x,room.y],[room.x+room.w,room.y],[room.x,room.y+room.h],[room.x+room.w,room.y+room.h]];
+    const mids=[[room.x+room.w/2,room.y],[room.x+room.w/2,room.y+room.h],[room.x,room.y+room.h/2],[room.x+room.w,room.y+room.h/2]];
+    for(const [ec,er] of [...corners,...mids]){
+      const d=Math.sqrt((c-ec)**2+(r-er)**2);
+      if(d<bestDist){bestDist=d;best={c:ec,r:er};}
+    }
+  }
+  return best;
+}
+
+function getWallAt(c,r){
+  const cs=getCellSize();
+  const CLICK_THRESH=10/cs; // in cell units
+  for(let i=state.walls.length-1;i>=0;i--){
+    const w=state.walls[i];
+    if(w.floor!==state.floor)continue;
+    const dx=w.x2-w.x1,dy=w.y2-w.y1;
+    const len2=dx*dx+dy*dy;
+    if(len2<0.001)continue;
+    const t=Math.max(0,Math.min(1,((c-w.x1)*dx+(r-w.y1)*dy)/len2));
+    const nearX=w.x1+t*dx,nearY=w.y1+t*dy;
+    const dist=Math.sqrt((c-nearX)**2+(r-nearY)**2);
+    if(dist<CLICK_THRESH) return w;
+  }
+  return null;
+}
+
+// -- Physics (unchanged) --
+function layerT(mat){
+  return Math.exp(-mat.mu * (mat.rho/1000.0) * (mat.thickness*100.0));
+}
+function assemblyT(layers){
+  let T=1.0; for(const l of layers){ const mat=matById(l.matId); T*=layerT(mat); } return T;
+}
+function assemblyMass_kgm2(layers){
+  let m=0; for(const l of layers) m+=matById(l.matId).rho*matById(l.matId).thickness; return m;
+}
+
+function rectVF(d, a, b){
+  const sqrt_da=Math.sqrt(d*d+a*a), sqrt_db=Math.sqrt(d*d+b*b);
+  return (1/(2*Math.PI))*((a/sqrt_da)*Math.atan(b/sqrt_da)+(b/sqrt_db)*Math.atan(a/sqrt_db));
+}
+function viewFactors(W, D, H){
+  const fN=rectVF(D/2,W/2,H/2), fS=rectVF(D/2,W/2,H/2);
+  const fE=rectVF(W/2,D/2,H/2), fW=rectVF(W/2,D/2,H/2);
+  const fR=rectVF(H/2,W/2,D/2), fF=rectVF(H/2,W/2,D/2);
+  const total=fN+fS+fE+fW+fR+fF;
+  return {N:fN/total,S:fS/total,E:fE/total,W:fW/total,R:fR/total,F:fF/total};
+}
+
+function effectiveWallT(face, wallArea_m2){
+  const T_wall=assemblyT(face.layers);
+  let openArea=0, weightedOpenT=0;
+  for(const op of face.openings){ const ot=OPENING_TYPES[op.type]; if(!ot) continue; const area=ot.w*ot.h; openArea+=area; weightedOpenT+=area*ot.T; }
+  const f=Math.min(openArea/Math.max(wallArea_m2,0.1),0.95);
+  const T_open=(openArea>0)?(weightedOpenT/openArea):1.0;
+  return (1.0-f)*T_wall+f*T_open;
+}
+
+// -- Standalone wall ray intersection --
+// Returns true if segment (p1->p2) intersects segment (p3->p4), storing t in out.t
+function segSegIntersect(p1x,p1y,p2x,p2y,p3x,p3y,p4x,p4y){
+  const d1x=p2x-p1x,d1y=p2y-p1y;
+  const d2x=p4x-p3x,d2y=p4y-p3y;
+  const denom=d1x*d2y-d1y*d2x;
+  if(Math.abs(denom)<1e-10) return null; // parallel
+  const t=((p3x-p1x)*d2y-(p3y-p1y)*d2x)/denom;
+  const u=((p3x-p1x)*d1y-(p3y-p1y)*d1x)/denom;
+  if(t>=0&&t<=1&&u>=0&&u<=1) return {t,u}; // intersects
+  return null;
+}
+
+// Default wall height in cells (same as default room wall height, 8ft = 2 cells)
+const WALL_HEIGHT_FT = 8;
+const WALL_AREA_M2 = (WALL_HEIGHT_FT * 0.3048) * (4 * 0.3048); // 8ft tall × 4ft wide segment reference
+
+// For a ray from (rx,ry) in direction (dx,dy) going to the room boundary,
+// compute the combined transmission through any standalone walls it crosses on the given floor.
+// Returns a T multiplier (1.0 = no walls, <1.0 = walls attenuate).
+function wallRayT(rx,ry,dx,dy,floor){
+  // Ray end point -- extend far enough to reach any room boundary
+  const FAR=200;
+  const ex=rx+dx*FAR, ey=ry+dy*FAR;
+  let T=1.0;
+  for(const w of state.walls){
+    if(w.floor!==floor) continue;
+    const hit=segSegIntersect(rx,ry,ex,ey,w.x1,w.y1,w.x2,w.y2);
+    if(!hit) continue;
+    // Determine which face (A or B) based on which side the ray comes from
+    // Cross product of wall direction and ray direction
+    const wdx=w.x2-w.x1,wdy=w.y2-w.y1;
+    const cross=wdx*dy-wdy*dx;
+    // Face A is the "left" side of the wall (cross > 0 from outside), B is "right"
+    const face=cross>0?w.faces.A:w.faces.B;
+    T*=effectiveWallT(face,WALL_AREA_M2);
+  }
+  return T;
+}
+
+// Get the extra T factor from standalone walls along each room face direction.
+// For each face direction, cast a ray from room center outward and multiply wall transmissions.
+// This integrates standalone walls into the room PF calculation.
+function wallShieldingForRoom(room, floor){
+  const cx=room.x+room.w/2, cy=room.y+room.h/2;
+  return {
+    N: wallRayT(cx,cy, 0,-1,floor),
+    S: wallRayT(cx,cy, 0, 1,floor),
+    E: wallRayT(cx,cy, 1, 0,floor),
+    W: wallRayT(cx,cy,-1, 0,floor),
+  };
+}
+
+// For a specific point (px,py) inside a room, get wall shielding in each direction.
+function wallShieldingAtPoint(px,py,floor){
+  return {
+    N: wallRayT(px,py, 0,-1,floor),
+    S: wallRayT(px,py, 0, 1,floor),
+    E: wallRayT(px,py, 1, 0,floor),
+    W: wallRayT(px,py,-1, 0,floor),
+  };
+}
+
+function neighborCoverage(room, faceKey){
+  const {x,y,w,h}=room; const TOL=1.5;
+  let covered=0, total=0;
+  if(faceKey==='N'){total=w;for(const r of state.rooms){if(r.id===room.id||r.floor!==room.floor)continue;if(Math.abs(r.y+r.h-y)<TOL){const ov=Math.min(x+w,r.x+r.w)-Math.max(x,r.x);if(ov>0.2*w)covered+=ov;}}}
+  else if(faceKey==='S'){total=w;for(const r of state.rooms){if(r.id===room.id||r.floor!==room.floor)continue;if(Math.abs(r.y-(y+h))<TOL){const ov=Math.min(x+w,r.x+r.w)-Math.max(x,r.x);if(ov>0.2*w)covered+=ov;}}}
+  else if(faceKey==='E'){total=h;for(const r of state.rooms){if(r.id===room.id||r.floor!==room.floor)continue;if(Math.abs(r.x-(x+w))<TOL){const ov=Math.min(y+h,r.y+r.h)-Math.max(y,r.y);if(ov>0.2*h)covered+=ov;}}}
+  else if(faceKey==='W'){total=h;for(const r of state.rooms){if(r.id===room.id||r.floor!==room.floor)continue;if(Math.abs(r.x+r.w-x)<TOL){const ov=Math.min(y+h,r.y+r.h)-Math.max(y,r.y);if(ov>0.2*h)covered+=ov;}}}
+  if(total<0.001) return {frac:0,neighbor:null};
+  const frac=Math.min(covered/total,1.0);
+  if(frac<0.15) return {frac:0,neighbor:null};
+  let nb=null;
+  for(const r of state.rooms){
+    if(r.id===room.id||r.floor!==room.floor)continue;
+    if(faceKey==='N'&&Math.abs(r.y+r.h-y)<TOL){nb=r;break;}
+    if(faceKey==='S'&&Math.abs(r.y-(y+h))<TOL){nb=r;break;}
+    if(faceKey==='E'&&Math.abs(r.x-(x+w))<TOL){nb=r;break;}
+    if(faceKey==='W'&&Math.abs(r.x+r.w-x)<TOL){nb=r;break;}
+  }
+  return {frac,neighbor:nb};
+}
+
+function calcPF(room){
+  const cfg=state.buildingCfg; const ft2m=0.3048;
+  const W=room.w*FT_PER_CELL*ft2m, D=room.h*FT_PER_CELL*ft2m, H=room.wallHeight*ft2m;
+  const vf=viewFactors(W,D,H);
+  const wallArea={N:W*H,S:W*H,E:D*H,W:D*H,R:W*D,F:W*D};
+  let T_soil=1.0;
+  if(room.floor==='basement'&&cfg.hasBasement){
+    const soilDepth_cm=cfg.bsmtDepth*ft2m*100;
+    T_soil=Math.exp(-0.0786*(cfg.soilDensity/1000)*soilDepth_cm);
+  }
+  // Standalone wall shielding: extra T factor per cardinal direction from room center
+  const wsT=wallShieldingForRoom(room,room.floor);
+  let doseSum=0;
+  for(const fKey of ['N','S','E','W','R','F']){
+    const face=room.faces[fKey]; const area_m2=wallArea[fKey];
+    let T=effectiveWallT(face,area_m2);
+    if(['N','S','E','W'].includes(fKey)){
+      // Multiply by any standalone walls in this direction
+      T*=wsT[fKey];
+      const {frac,neighbor}=neighborCoverage(room,fKey);
+      if(frac>0.1&&neighbor!==null){
+        const oppFace={N:'S',S:'N',E:'W',W:'E'}[fKey];
+        const nb_outer_T=effectiveWallT(neighbor.faces[oppFace],area_m2);
+        const nb_inner_T=effectiveWallT(neighbor.faces[fKey],area_m2);
+        const airDepth_m=(fKey==='N'||fKey==='S')?neighbor.h*FT_PER_CELL*ft2m:neighbor.w*FT_PER_CELL*ft2m;
+        const T_air=Math.exp(-0.0779*0.001225*airDepth_m*100);
+        const T_nb_path=nb_outer_T*T_air*nb_inner_T*T;
+        T=frac*T_nb_path+(1-frac)*T;
+      }
+    }
+    if(fKey==='F'){
+      const gs=room.floor==='basement'?0.5*T_soil:room.floor==='ground'?0.5:room.floor==='upper'?0.10:0.03;
+      T*=gs;
+    }
+    if(fKey==='R'&&room.floor==='basement') T*=T_soil;
+    if(fKey==='R'&&room.floor==='ground'&&cfg.skyShineFactor!==0){
+      const fSky=cfg.skyShineFactor!==undefined?cfg.skyShineFactor:0.25;
+      const T_roof_asm=effectiveWallT(face,wallArea[fKey]);
+      doseSum+=vf[fKey]*fSky*T_roof_asm;
+    }
+    doseSum+=vf[fKey]*T;
+  }
+  return {PF:Math.min(10000, 1.0/Math.max(doseSum,0.0001)),doseSum,vf};
+}
+
+function rectVF_corner(d,a,b){
+  const sqrt_da=Math.sqrt(d*d+a*a),sqrt_db=Math.sqrt(d*d+b*b);
+  return (1/(4*Math.PI))*((a/sqrt_da)*Math.atan(b/sqrt_da)+(b/sqrt_db)*Math.atan(a/sqrt_db));
+}
+function rectVF_general(d,a1,a2,b1,b2){
+  return rectVF_corner(d,a2,b2)+rectVF_corner(d,a1,b1)-rectVF_corner(d,a1,b2)-rectVF_corner(d,a2,b1);
+}
+function viewFactors_at(W,D,H,fx,fy){
+  // Keep the point away from the literal wall surface; EPS=0.10 prevents degenerate
+  // near-wall positions where the Lambertian formula gives near-zero VF to nearby faces.
+  const EPS=0.10;
+  const px=Math.max(EPS,Math.min(1-EPS,fx))*W, py=Math.max(EPS,Math.min(1-EPS,fy))*D, pz=H/2;
+  const dN=py,dS=D-py,dE=W-px,dW=px,dR=H-pz,dF=pz;
+  let fN=rectVF_general(dN,px,W-px,pz,H-pz);
+  let fS=rectVF_general(dS,px,W-px,pz,H-pz);
+  let fE=rectVF_general(dE,py,D-py,pz,H-pz);
+  let fW=rectVF_general(dW,py,D-py,pz,H-pz);
+  let fR=rectVF_general(dR,px,W-px,py,D-py);
+  let fF=rectVF_general(dF,px,W-px,py,D-py);
+  // Enforce a minimum per-face view factor. No interior point can have a face be
+  // completely invisible -- the MIN_VF prevents floating-point underflow from collapsing
+  // high-attenuation assemblies (e.g. soil-shielded basement) to zero doseSum.
+  const MIN_VF=0.02;
+  fN=Math.max(MIN_VF,fN); fS=Math.max(MIN_VF,fS);
+  fE=Math.max(MIN_VF,fE); fW=Math.max(MIN_VF,fW);
+  fR=Math.max(MIN_VF,fR); fF=Math.max(MIN_VF,fF);
+  const total=fN+fS+fE+fW+fR+fF;
+  if(total<0.001) return {N:1/6,S:1/6,E:1/6,W:1/6,R:1/6,F:1/6};
+  return {N:fN/total,S:fS/total,E:fE/total,W:fW/total,R:fR/total,F:fF/total};
+}
+
+function calcPF_at_point(room,fx,fy){
+  const cfg=state.buildingCfg; const ft2m=0.3048;
+  const W=room.w*FT_PER_CELL*ft2m, D=room.h*FT_PER_CELL*ft2m, H=room.wallHeight*ft2m;
+  const vf=viewFactors_at(W,D,H,fx,fy);
+  const wallArea={N:W*H,S:W*H,E:D*H,W:D*H,R:W*D,F:W*D};
+  let T_soil=1.0;
+  if(room.floor==='basement'&&cfg.hasBasement){
+    const soilDepth_cm=cfg.bsmtDepth*ft2m*100;
+    T_soil=Math.exp(-0.0786*(cfg.soilDensity/1000)*soilDepth_cm);
+  }
+  // Per-point standalone wall shielding (ray-cast from actual point position)
+  const px=room.x+fx*room.w, py=room.y+fy*room.h;
+  const wsT=wallShieldingAtPoint(px,py,room.floor);
+  let doseSum=0;
+  for(const fKey of ['N','S','E','W','R','F']){
+    const face=room.faces[fKey]; const area_m2=wallArea[fKey];
+    let T=effectiveWallT(face,area_m2);
+    if(['N','S','E','W'].includes(fKey)){
+      T*=wsT[fKey];
+      const {frac,neighbor}=neighborCoverage(room,fKey);
+      if(frac>0.1&&neighbor){
+        const oppFace={N:'S',S:'N',E:'W',W:'E'}[fKey];
+        const nb_outer_T=effectiveWallT(neighbor.faces[oppFace],area_m2);
+        const nb_inner_T=effectiveWallT(neighbor.faces[fKey],area_m2);
+        const airDepth_m=(fKey==='N'||fKey==='S')?neighbor.h*FT_PER_CELL*ft2m:neighbor.w*FT_PER_CELL*ft2m;
+        const T_air=Math.exp(-0.0779*0.001225*airDepth_m*100);
+        T=frac*(nb_outer_T*T_air*nb_inner_T*T)+(1-frac)*T;
+      }
+    }
+    if(fKey==='F'){const gs=room.floor==='basement'?0.5*T_soil:room.floor==='ground'?0.5:room.floor==='upper'?0.10:0.03;T*=gs;}
+    if(fKey==='R'&&room.floor==='basement')T*=T_soil;
+    if(fKey==='R'&&room.floor==='ground'&&cfg.skyShineFactor!==0){
+      const fSky=cfg.skyShineFactor!==undefined?cfg.skyShineFactor:0.25;
+      const T_roof_asm=effectiveWallT(face,wallArea[fKey]);
+      doseSum+=vf[fKey]*fSky*T_roof_asm;
+    }
+    doseSum+=vf[fKey]*T;
+  }
+  return Math.min(10000, 1.0/Math.max(doseSum,0.0001));
+}
+
+function pfToHeatmapColor(pf){
+  const logMin=0,logMax=Math.log10(1000);
+  const t=Math.max(0,Math.min(1,(Math.log10(Math.max(pf,1))-logMin)/logMax));
+  let r,g,b;
+  if(t<0.33){const s=t/0.33;r=255;g=Math.round(s*176);b=0;}
+  else if(t<0.66){const s=(t-0.33)/0.33;r=Math.round(255*(1-s*0.6));g=Math.round(176+s*79);b=0;}
+  else{const s=(t-0.66)/0.34;r=Math.round(102*(1-s));g=255;b=Math.round(s*65);}
+  return `rgba(${r},${g},${b},0.55)`;
+}
+
+function estimateDR1(yieldKt,distMi,burstType,windMph){
+  if(burstType==='airburst') return Math.max(0.1,yieldKt*0.001/Math.max(distMi*distMi,0.1));
+  const yieldMT=yieldKt/1000.0;
+  const K=220*Math.pow(yieldMT,0.4);
+  const windFactor=Math.sqrt(windMph/15.0);
+  return Math.max(0.01,(K*yieldMT)/(Math.max(distMi*distMi,0.25)*windFactor));
+}
+function calcAccumulatedDose(DR1,PF,t1_hr,dur_hr){
+  const t1=Math.max(t1_hr,0.5),t2=t1+Math.max(dur_hr,0.1);
+  return (DR1/Math.max(PF,1.0))*5.0*(Math.pow(t1,-0.2)-Math.pow(t2,-0.2));
+}
+function convertDose(doseR,unit){
+  const conv={R:1,rad:0.96,rem:0.96,Gy:0.0096,Sv:0.0096,mGy:9.6,mSv:9.6,mR:1000};
+  return doseR*(conv[unit]||1);
+}
+function riskClass(doseR){
+  if(doseR<25)  return {cls:'risk-low',label:'No acute effects expected (< 25 R)'};
+  if(doseR<100) return {cls:'risk-mild',label:'Mild: hematopoietic effects possible (25-100 R)'};
+  if(doseR<300) return {cls:'risk-mod',label:'Moderate ARS -- medical care needed (100-300 R)'};
+  if(doseR<600) return {cls:'risk-sev',label:'Severe ARS -- life-threatening (300-600 R)'};
+  return {cls:'risk-let',label:'LETHAL -- LD50/60 exceeded. >600 R without intensive care.'};
+}
+
+// ============================================================
+// CANVAS
+// ============================================================
+const canvas = document.getElementById('main-canvas');
+const ctx = canvas.getContext('2d');
+
+// -- Performance: offscreen heatmap + RAF debounce --
+let _heatmapCanvas = document.createElement('canvas');
+let _heatmapCtx = _heatmapCanvas.getContext('2d');
+let _heatmapDirty = true;
+let _heatmapFloor = null;
+let _heatmapZoom = null;
+let _rafId = null;
+
+// Hotspot overlay offscreen canvas
+let _hotspotCanvas = document.createElement('canvas');
+let _hotspotCtx = _hotspotCanvas.getContext('2d');
+let _hotspotDirty = true;
+
+// Floor plan background image
+let _floorplanImg = null;
+
+function invalidateHotspot(){ _hotspotDirty=true; }
+
+// Per-cycle PF cache. calcPF(room) is pure with respect to state.rooms/walls/cfg,
+// and gets called up to ~4x per room per updateAll() (drawCanvas + room props +
+// pf-summary tab + rooms tab). The cache short-circuits redundant calls; it's
+// cleared whenever invalidateHeatmap() fires (i.e. whenever state mutates).
+const _pfCache = new Map();
+function getCachedPF(room){
+  let v = _pfCache.get(room.id);
+  if(v) return v;
+  v = calcPF(room);
+  _pfCache.set(room.id, v);
+  return v;
+}
+
+function invalidateHeatmap(){ _heatmapDirty=true; _hotspotDirty=true; _pfCache.clear(); }
+function scheduleDraw(){
+  if(_rafId) return;
+  _rafId=requestAnimationFrame(()=>{ _rafId=null; drawCanvas(); });
+}
+
+// Pre-compute per-face effective T values for a room (avoids re-running inside pixel loop)
+function precomputeFaceT(room){
+  const cfg=state.buildingCfg; const ft2m=0.3048;
+  const W=room.w*FT_PER_CELL*ft2m, D=room.h*FT_PER_CELL*ft2m, H=room.wallHeight*ft2m;
+  const wallArea={N:W*H,S:W*H,E:D*H,W:D*H,R:W*D,F:W*D};
+  let T_soil=1.0;
+  if(room.floor==='basement'&&cfg.hasBasement){
+    const soilDepth_cm=cfg.bsmtDepth*ft2m*100;
+    T_soil=Math.exp(-0.0786*(cfg.soilDensity/1000)*soilDepth_cm);
+  }
+  // Room-center wall shielding (fast path -- direction average)
+  const wsT=wallShieldingForRoom(room,room.floor);
+  const faceT={};
+  for(const fKey of ['N','S','E','W','R','F']){
+    const face=room.faces[fKey]; const area_m2=wallArea[fKey];
+    let T=effectiveWallT(face,area_m2);
+    if(['N','S','E','W'].includes(fKey)){
+      T*=wsT[fKey];
+      const {frac,neighbor}=neighborCoverage(room,fKey);
+      if(frac>0.1&&neighbor!==null){
+        const oppFace={N:'S',S:'N',E:'W',W:'E'}[fKey];
+        const nb_outer_T=effectiveWallT(neighbor.faces[oppFace],area_m2);
+        const nb_inner_T=effectiveWallT(neighbor.faces[fKey],area_m2);
+        const airDepth_m=(fKey==='N'||fKey==='S')?neighbor.h*FT_PER_CELL*ft2m:neighbor.w*FT_PER_CELL*ft2m;
+        const T_air=Math.exp(-0.0779*0.001225*airDepth_m*100);
+        T=frac*(nb_outer_T*T_air*nb_inner_T*T)+(1-frac)*T;
+      }
+    }
+    if(fKey==='F'){const gs=room.floor==='basement'?0.5*T_soil:room.floor==='ground'?0.5:room.floor==='upper'?0.10:0.03;T*=gs;}
+    if(fKey==='R'&&room.floor==='basement')T*=T_soil;
+    faceT[fKey]=T;
+  }
+  // Skyshine additive component for ground floor roof
+  let skyshineRoofExtra=0;
+  if(room.floor==='ground'&&cfg.skyShineFactor>0){
+    skyshineRoofExtra=cfg.skyShineFactor*effectiveWallT(room.faces.R,wallArea.R);
+  }
+  // Flag: if there are standalone walls on this floor, use per-point calculation in heatmap
+  // (calcPF_fast uses room-center rays which can't model gaps; calcPF_at_point does per-pixel)
+  const hasFloorWalls=state.walls.some(w=>w.floor===room.floor);
+  return {faceT,skyshineRoofExtra,W,D,H,hasFloorWalls,room};
+}
+
+// Optimized per-point PF using pre-computed face T values.
+// Falls back to full per-point ray-cast when standalone walls exist on the floor,
+// so gaps in walls are accurately reflected in the heatmap.
+function calcPF_fast(precomp, fx, fy){
+  if(precomp.hasFloorWalls){
+    // Per-point ray casting -- correctly models wall gaps
+    return calcPF_at_point(precomp.room, fx, fy);
+  }
+  const {faceT,skyshineRoofExtra,W,D,H}=precomp;
+  const vf=viewFactors_at(W,D,H,fx,fy);
+  let doseSum=0;
+  for(const fKey of ['N','S','E','W','R','F']){
+    doseSum+=vf[fKey]*faceT[fKey];
+  }
+  if(skyshineRoofExtra>0) doseSum+=vf.R*skyshineRoofExtra;
+  return Math.min(10000, 1.0/Math.max(doseSum,0.0001));
+}
+
+function canvasToCell(px,py){
+  const cs=getCellSize();
+  return {c:px/cs, r:py/cs};  // fractional for wall drawing
+}
+function canvasToCellInt(px,py){
+  const cs=getCellSize();
+  return {c:Math.floor(px/cs),r:Math.floor(py/cs)};
+}
+function pfColor(pf){ return pf>=40?'#00ff41':pf>=10?'#ffb000':'#ff3333'; }
+function pfLabel(pf){ return pf>=40?'GOOD':pf>=10?'FAIR':'POOR'; }
+
+// -- Draw standalone walls --
+function drawWalls(){
+  const cs=getCellSize();
+  for(const w of state.walls){
+    if(w.floor!==state.floor)continue;
+    const isSel=state.selectedWall===w.id;
+    const x1=w.x1*cs,y1=w.y1*cs,x2=w.x2*cs,y2=w.y2*cs;
+
+    // Compute effective T for wall (average of A/B, accounting for openings)
+    const T_A=effectiveWallT(w.faces.A,WALL_AREA_M2);
+    const T_B=effectiveWallT(w.faces.B,WALL_AREA_M2);
+    const T_eff=(T_A+T_B)/2;
+    // Color wall by its shielding quality
+    const wallCol=T_eff<0.05?'#00ff41':T_eff<0.3?'#ffb000':'#88aa88';
+
+    // Shadow glow for selected
+    if(isSel){ ctx.shadowColor='#00ff41';ctx.shadowBlur=6; }
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+    ctx.strokeStyle=isSel?'#00ff41':wallCol+'cc';
+    ctx.lineWidth=isSel?3:2;ctx.stroke();
+    ctx.shadowBlur=0;
+
+    // Endpoints as circles
+    for(const [ex,ey] of [[x1,y1],[x2,y2]]){
+      ctx.beginPath();ctx.arc(ex,ey,isSel?4.5:3,0,Math.PI*2);
+      ctx.fillStyle=isSel?'#00ff41':wallCol+'99';ctx.fill();
+    }
+
+    // Opening marks -- draw gaps on the wall line where openings exist
+    for(const fk of ['A','B']){
+      for(const op of w.faces[fk].openings){
+        const ot=OPENING_TYPES[op.type];if(!ot)continue;
+        const pos=op.pos||0.5;
+        // Position along the wall
+        const ox=x1+(x2-x1)*pos, oy=y1+(y2-y1)*pos;
+        // Wall direction
+        const wlen=Math.sqrt((x2-x1)**2+(y2-y1)**2)||1;
+        const ux=(x2-x1)/wlen, uy=(y2-y1)/wlen;
+        // Opening width in pixels (based on door/window width vs wall length)
+        const wallLenFt=Math.sqrt(((w.x2-w.x1)*FT_PER_CELL)**2+((w.y2-w.y1)*FT_PER_CELL)**2);
+        const openingFrac=Math.min(0.25, ot.w/(wallLenFt*0.3048));
+        const halfOpPx=(openingFrac*wlen/2);
+        // Draw a gap (clear the wall line and draw the opening marker)
+        ctx.beginPath();ctx.moveTo(ox-ux*halfOpPx,oy-uy*halfOpPx);ctx.lineTo(ox+ux*halfOpPx,oy+uy*halfOpPx);
+        ctx.strokeStyle='#ff880099';ctx.lineWidth=3;ctx.stroke();
+        // Small perpendicular tick marks at opening edges
+        const nx=-uy,ny=ux;
+        ctx.strokeStyle='#ff8800cc';ctx.lineWidth=1;
+        for(const side of [-1,1]){
+          ctx.beginPath();ctx.moveTo(ox+ux*halfOpPx*side-nx*4,oy+uy*halfOpPx*side-ny*4);
+          ctx.lineTo(ox+ux*halfOpPx*side+nx*4,oy+uy*halfOpPx*side+ny*4);ctx.stroke();
+        }
+      }
+    }
+
+    // Length label pill
+    const mx=(x1+x2)/2,my=(y1+y2)/2;
+    const wdx=(w.x2-w.x1)*FT_PER_CELL,wdy=(w.y2-w.y1)*FT_PER_CELL;
+    const len=Math.sqrt(wdx*wdx+wdy*wdy).toFixed(0);
+    if(len>0){
+      ctx.font="9px 'Courier New',monospace";ctx.textAlign='center';
+      const tw=ctx.measureText(len+'ft').width;
+      ctx.fillStyle='rgba(10,10,8,0.85)';ctx.fillRect(mx-tw/2-3,my-7,tw+6,10);
+      ctx.fillStyle=isSel?'#00ff41':wallCol;ctx.fillText(len+'ft',mx,my+2);
+    }
+  }
+
+  // Wall draw preview
+  const wd=state.wallDrawState;
+  if(wd.active){
+    const snapS=wd.snapStart;const snapE=wd.snapEnd;
+    const x1=(snapS?snapS.c:wd.startC)*cs, y1=(snapS?snapS.r:wd.startR)*cs;
+    const x2=(snapE?snapE.c:wd.curC)*cs,   y2=(snapE?snapE.r:wd.curR)*cs;
+
+    // Axis lock: draw a subtle guide line extending through the locked axis
+    if(wd.axisSnap==='H'){
+      ctx.beginPath();ctx.moveTo(0,y1);ctx.lineTo(canvas.width,y1);
+      ctx.strokeStyle='rgba(0,255,204,0.12)';ctx.lineWidth=1;ctx.setLineDash([2,6]);ctx.stroke();ctx.setLineDash([]);
+    } else if(wd.axisSnap==='V'){
+      ctx.beginPath();ctx.moveTo(x1,0);ctx.lineTo(x1,canvas.height);
+      ctx.strokeStyle='rgba(0,255,204,0.12)';ctx.lineWidth=1;ctx.setLineDash([2,6]);ctx.stroke();ctx.setLineDash([]);
+    }
+
+    // Preview line -- brighter when axis-locked
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+    ctx.strokeStyle=wd.axisSnap?'#00ffcccc':'#00ff4199';ctx.lineWidth=2;
+    ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
+
+    // Snap rings (endpoint snap)
+    if(snapS){
+      ctx.beginPath();ctx.arc(x1,y1,9,0,Math.PI*2);
+      ctx.strokeStyle='#00ffcc';ctx.lineWidth=2;ctx.stroke();
+    }
+    if(snapE){
+      ctx.beginPath();ctx.arc(x2,y2,9,0,Math.PI*2);
+      ctx.strokeStyle='#00ffcc';ctx.lineWidth=2;ctx.stroke();
+    }
+
+    // Axis lock badge at cursor
+    if(wd.axisSnap){
+      const badge=wd.axisSnap==='H'?'⊸ H':'⊹ V';
+      ctx.font="bold 10px 'Courier New',monospace";
+      const bw=ctx.measureText(badge).width;
+      ctx.fillStyle='rgba(10,10,8,0.85)';ctx.fillRect(x2+8,y2-10,bw+8,14);
+      ctx.fillStyle='#00ffcc';ctx.textAlign='left';ctx.fillText(badge,x2+12,y2+1);
+    }
+
+    // Preview length label
+    const pdx=(wd.curC-wd.startC)*FT_PER_CELL, pdy=(wd.curR-wd.startR)*FT_PER_CELL;
+    const plenFt=Math.sqrt(pdx*pdx+pdy*pdy);
+    const plenStr=state.units==='metric'?(plenFt*0.3048).toFixed(1)+'m':plenFt.toFixed(1)+'ft';
+    if(plenFt>0){
+      ctx.fillStyle=wd.axisSnap?'#00ffcc':'#00ff41';
+      ctx.font="bold 11px 'Courier New',monospace";ctx.textAlign='center';
+      ctx.fillText(plenStr,(x1+x2)/2,(y1+y2)/2-10);
+    }
+  }
+}
+
+function drawCanvas(){
+  const cs=getCellSize();
+  canvas.width=GRID_COLS*cs;
+  canvas.height=GRID_ROWS*cs;
+
+  ctx.fillStyle='#0a0a08'; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Floor plan background image (if loaded)
+  if(state.floorplan.dataUrl && state.floorplan.enabled && _floorplanImg && _floorplanImg.complete){
+    ctx.save();
+    ctx.globalAlpha=state.floorplan.opacity;
+    ctx.drawImage(_floorplanImg, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+
+  // Grid -- single batched path; was 200+ separate beginPath/stroke pairs per frame
+  ctx.strokeStyle='#141410'; ctx.lineWidth=0.5;
+  ctx.beginPath();
+  for(let c=0;c<=GRID_COLS;c++){ ctx.moveTo(c*cs,0); ctx.lineTo(c*cs,canvas.height); }
+  for(let r=0;r<=GRID_ROWS;r++){ ctx.moveTo(0,r*cs); ctx.lineTo(canvas.width,r*cs); }
+  ctx.stroke();
+
+  // Ghost rooms on other floors
+  for(const room of state.rooms){
+    if(room.floor===state.floor)continue;
+    ctx.strokeStyle='#1e2e1e';ctx.lineWidth=0.5;
+    ctx.setLineDash([2,4]);ctx.strokeRect(room.x*cs+.5,room.y*cs+.5,room.w*cs-1,room.h*cs-1);ctx.setLineDash([]);
+  }
+
+  // Heatmap -- rendered to offscreen canvas, only recomputed when dirty
+  if(state.heatmap.enabled){
+    const isDragging=state.drawState.active||state.moveState.active||state.wallDrawState.active||state.wallMoveState.active;
+    const zoomChanged=_heatmapZoom!==state.zoom;
+    const floorChanged=_heatmapFloor!==state.floor;
+    if(_heatmapDirty||zoomChanged||floorChanged){
+      if(!isDragging){
+        _heatmapCanvas.width=canvas.width;
+        _heatmapCanvas.height=canvas.height;
+        const cw=canvas.width, ch=canvas.height;
+        const step=Math.max(1,state.heatmap.res);
+        // ImageData fast path: write packed RGBA pixels directly to a buffer,
+        // then putImageData once. Equivalent to fillRect-per-cell but ~50-100x faster
+        // because it skips per-cell color string parsing and per-cell GPU uploads.
+        const imgData=_heatmapCtx.createImageData(cw,ch);
+        const buf32=new Uint32Array(imgData.data.buffer);
+        for(const room of state.rooms){
+          if(room.floor!==state.floor)continue;
+          const rx=(room.x*cs)|0, ry=(room.y*cs)|0, rw=(room.w*cs)|0, rh=(room.h*cs)|0;
+          // Pre-compute face T values once per room (key optimization)
+          const precomp=precomputeFaceT(room);
+          for(let py=step/2;py<rh;py+=step){
+            for(let px=step/2;px<rw;px+=step){
+              const pf=calcPF_fast(precomp,px/rw,py/rh);
+              const u32=pfToHeatmapU32(pf);
+              // Fill the step x step block in the image buffer
+              const x0=rx+px-(step>>1);
+              const y0=ry+py-(step>>1);
+              let xa=x0; if(xa<0)xa=0;
+              let ya=y0; if(ya<0)ya=0;
+              let xb=x0+step; if(xb>cw)xb=cw;
+              let yb=y0+step; if(yb>ch)yb=ch;
+              for(let yy=ya;yy<yb;yy++){
+                let idx=yy*cw+xa;
+                for(let xx=xa;xx<xb;xx++) buf32[idx++]=u32;
+              }
+            }
+          }
+        }
+        _heatmapCtx.putImageData(imgData,0,0);
+        // PF scale bars (drawn on top of the pixel layer with normal canvas API)
+        for(const room of state.rooms){
+          if(room.floor!==state.floor)continue;
+          const rx=room.x*cs,ry=room.y*cs,rw=room.w*cs,rh=room.h*cs;
+          if(rw>cs*4&&rh>cs*3){
+            const barW=Math.min(rw-cs*2,70),barH=6;
+            const bx=rx+rw/2-barW/2,by=ry+rh-barH-6;
+            const grad=_heatmapCtx.createLinearGradient(bx,0,bx+barW,0);
+            grad.addColorStop(0,'rgba(255,0,0,0.7)');grad.addColorStop(0.33,'rgba(255,176,0,0.7)');
+            grad.addColorStop(0.66,'rgba(200,255,0,0.7)');grad.addColorStop(1,'rgba(0,255,65,0.7)');
+            _heatmapCtx.fillStyle=grad;_heatmapCtx.fillRect(bx,by,barW,barH);
+            _heatmapCtx.fillStyle='#446644';_heatmapCtx.font="9px 'Courier New',monospace";
+            _heatmapCtx.textAlign='left';_heatmapCtx.fillText('PF 1',bx,by-1);
+            _heatmapCtx.textAlign='right';_heatmapCtx.fillText('1000',bx+barW,by-1);
+          }
+        }
+        _heatmapDirty=false;
+        _heatmapZoom=state.zoom;
+        _heatmapFloor=state.floor;
+      }
+    }
+    // Blit cached heatmap (even during drag we show the last good one)
+    if(_heatmapCanvas.width===canvas.width&&_heatmapCanvas.height===canvas.height){
+      ctx.drawImage(_heatmapCanvas,0,0);
+    }
+  }
+
+  // Gamma hotspot overlay
+  if(state.hotspot.enabled && state.hotspot.active && state.hotspot.floor===state.floor){
+    const isDragging=state.drawState.active||state.moveState.active||state.wallDrawState.active||state.wallMoveState.active;
+    if(_hotspotDirty && !isDragging){
+      _hotspotCanvas.width=canvas.width;
+      _hotspotCanvas.height=canvas.height;
+      const cw=canvas.width, ch=canvas.height;
+      const iso=isotopeById(state.hotspot.isotope);
+      const actMBq=state.hotspot.activityGBq*1000;
+      const step=Math.max(2,state.heatmap.res);
+      // Bounding-box clip: hotspotColor() returns null when unshielded < 0.05 uSv/hr.
+      // unshielded = (actMBq*gamma / dist_m^2) * B, where B (buildup) is capped at 8 in
+      // buildupFactor(). Solving (actMBq*gamma*B_max)/dist_m^2 < 0.05 gives the radius
+      // beyond which every pixel would have been transparent anyway. Clipping to that
+      // disk avoids scanning empty space (huge win at high zoom or low activity).
+      const ft2m=0.3048;
+      const B_MAX=8.0;
+      const maxDist_m=Math.sqrt((actMBq*iso.gamma_uSv_MBq_1m*B_MAX)/0.05);
+      const maxDist_cells=maxDist_m/(FT_PER_CELL*ft2m);
+      const maxDist_px=maxDist_cells*cs+step;
+      const sx_px=state.hotspot.c*cs, sy_px=state.hotspot.r*cs;
+      let xMin=Math.floor(sx_px-maxDist_px), xMax=Math.ceil(sx_px+maxDist_px);
+      let yMin=Math.floor(sy_px-maxDist_px), yMax=Math.ceil(sy_px+maxDist_px);
+      if(xMin<0)xMin=0; if(yMin<0)yMin=0;
+      if(xMax>cw)xMax=cw; if(yMax>ch)yMax=ch;
+      // ImageData fast path -- one allocation, one putImageData
+      const imgData=_hotspotCtx.createImageData(cw,ch);
+      const buf32=new Uint32Array(imgData.data.buffer);
+      for(let py=yMin+step/2;py<yMax;py+=step){
+        for(let px=xMin+step/2;px<xMax;px+=step){
+          const pc=px/cs, pr=py/cs;
+          const result=hotspotDoseAt(pc,pr,state.hotspot.c,state.hotspot.r,state.hotspot.floor,iso,actMBq);
+          const u32=hotspotColorU32(result.shielded, result.unshielded);
+          if(u32===0) continue;
+          const x0=px-(step>>1), y0=py-(step>>1);
+          let xa=x0; if(xa<0)xa=0;
+          let ya=y0; if(ya<0)ya=0;
+          let xb=x0+step; if(xb>cw)xb=cw;
+          let yb=y0+step; if(yb>ch)yb=ch;
+          for(let yy=ya;yy<yb;yy++){
+            let idx=yy*cw+xa;
+            for(let xx=xa;xx<xb;xx++) buf32[idx++]=u32;
+          }
+        }
+      }
+      _hotspotCtx.putImageData(imgData,0,0);
+      _hotspotDirty=false;
+    }
+    if(_hotspotCanvas.width===canvas.width&&_hotspotCanvas.height===canvas.height){
+      ctx.drawImage(_hotspotCanvas,0,0);
+    }
+    // Draw source marker
+    const sx=state.hotspot.c*cs, sy=state.hotspot.r*cs;
+    const R2=Math.max(cs*0.55,10);
+    // Pulsing ring
+    ctx.beginPath();ctx.arc(sx,sy,R2+4,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,100,0,0.4)';ctx.lineWidth=3;ctx.stroke();
+    ctx.beginPath();ctx.arc(sx,sy,R2,0,Math.PI*2);
+    ctx.strokeStyle='#ff6600';ctx.lineWidth=2;ctx.stroke();
+    // Radiation symbol
+    ctx.fillStyle='#ff6600';ctx.font=`bold ${Math.max(10,Math.round(R2*1.2))}px monospace`;
+    ctx.textAlign='center';ctx.fillText('\u2622',sx,sy+R2*0.35);
+    // Dose rate label at source
+    const iso2=isotopeById(state.hotspot.isotope);
+    const drAt1m=(state.hotspot.activityGBq*1000*iso2.gamma_uSv_MBq_1m);
+    const drTxt=formatDR(drAt1m,state.hotspot.drUnit||'uSv');
+    ctx.font=`bold 10px 'Courier New',monospace`;
+    const lw=ctx.measureText(drTxt).width;
+    ctx.fillStyle='rgba(10,10,8,0.88)';ctx.fillRect(sx-lw/2-4,sy-R2-18,lw+8,14);
+    ctx.strokeStyle='#ff6600';ctx.lineWidth=1;ctx.strokeRect(sx-lw/2-4,sy-R2-18,lw+8,14);
+    ctx.fillStyle='#ffaa44';ctx.fillText(drTxt,sx,sy-R2-7);
+  }
+
+  // Room outlines + labels
+  for(const room of state.rooms){
+    if(room.floor!==state.floor)continue;
+    const {PF}=getCachedPF(room);
+    const col=pfColor(PF);
+    const x=room.x*cs,y=room.y*cs,w=room.w*cs,h=room.h*cs;
+    const isSel=state.selectedRoom===room.id;
+
+    if(!state.heatmap.enabled){ctx.fillStyle=col+(isSel?'22':'14');ctx.fillRect(x+1,y+1,w-2,h-2);}
+
+    const drawEdge=(fk,x1,y1,x2,y2)=>{
+      const {frac}=neighborCoverage(room,fk);
+      const isActiveFace=isSel&&state.selectedFace===fk;
+      ctx.strokeStyle=isActiveFace?'#00ff41':frac>=0.9?'#00ffcc':col+'cc';
+      ctx.lineWidth=isActiveFace?2.5:1.5;
+      ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    };
+    drawEdge('N',x,y,x+w,y);drawEdge('S',x,y+h,x+w,y+h);
+    drawEdge('E',x+w,y,x+w,y+h);drawEdge('W',x,y,x,y+h);
+
+    if(isSel){
+      ctx.strokeStyle='#00ff41';ctx.lineWidth=1;
+      [[x,y],[x+w,y],[x,y+h],[x+w,y+h]].forEach(([cx,cy])=>ctx.strokeRect(cx-2,cy-2,4,4));
+    }
+
+    const fz=Math.max(Math.min(cs*0.7,14),9);
+    ctx.font=`${fz}px 'Courier New',monospace`;ctx.textAlign='center';
+    if(w>cs*1.5&&h>cs*1.2){
+      const lx2=x+w/2,ly2=y+h/2;
+      const lbls=[room.name,'PF '+Math.round(PF)];
+      if(h>cs*2.4) lbls.push(`${room.w*FT_PER_CELL}×${room.h*FT_PER_CELL}ft`);
+      const pillH=lbls.length*fz*1.3+6;
+      const pillW=Math.max(...lbls.map(l=>l.length))*fz*0.62+10;
+      ctx.fillStyle='rgba(10,10,8,0.78)';
+      ctx.fillRect(lx2-pillW/2,ly2-pillH/2,pillW,pillH);
+      lbls.forEach((l,i)=>{
+        ctx.fillStyle=i===0?col:i===1?col+'dd':'#446644';
+        ctx.fillText(l,lx2,ly2-pillH/2+fz*(i+0.9)*1.3);
+      });
+    } else {
+      ctx.fillStyle='rgba(10,10,8,0.78)';ctx.fillRect(x+w/2-20,y+h/2-fz/2-1,40,fz+2);
+      ctx.fillStyle=col;ctx.fillText('PF'+Math.round(PF),x+w/2,y+h/2+fz*0.3);
+    }
+
+    for(const fk of ['N','S','E','W']){
+      for(const op of room.faces[fk].openings){
+        const ot=OPENING_TYPES[op.type];if(!ot)continue;
+        const pos=op.pos||0.5;
+        ctx.fillStyle='#ff880099';
+        const ow=Math.min(ot.w/(room.w*FT_PER_CELL*0.3048)*w,w*0.25);
+        const oh=Math.min(ot.h/(room.h*FT_PER_CELL*0.3048)*h,h*0.25);
+        if(fk==='N'||fk==='S'){ctx.fillRect(x+w*pos-ow/2,fk==='N'?y-1.5:y+h-1.5,ow,3);}
+        else{ctx.fillRect(fk==='E'?x+w-1.5:x-1.5,y+h*pos-oh/2,3,oh);}
+      }
+    }
+
+    // Skyshine indicator: amber cloud+% in top-right of ground-floor rooms
+    if(room.floor==='ground'&&state.buildingCfg.skyShineFactor>0&&w>cs*1.5){
+      const fSky=state.buildingCfg.skyShineFactor;
+      const T_roof=assemblyT(room.faces.R.layers);
+      const ssLabel=`☁ sky:${(fSky*T_roof*100).toFixed(1)}%`;
+      const sfz=Math.max(Math.min(cs*0.52,10),8);
+      ctx.font=`${sfz}px 'Courier New',monospace`;
+      const sw=ctx.measureText(ssLabel).width;
+      ctx.fillStyle='rgba(10,10,8,0.82)';ctx.fillRect(x+w-sw-8,y+3,sw+6,sfz+3);
+      ctx.fillStyle='#ffb000cc';ctx.textAlign='right';ctx.fillText(ssLabel,x+w-3,y+sfz+3);
+    }
+  }
+
+  // Draw standalone walls (on top of rooms)
+  drawWalls();
+
+  // Person marker — works inside and outside rooms
+  if(state.person.active&&state.person.floor===state.floor){
+    const px=state.person.c*cs, py=state.person.r*cs;
+    const R=Math.max(cs*0.55,10);
+
+    const personRoom=getRoomAt(Math.floor(state.person.c),Math.floor(state.person.r));
+    let personPF, markerColor;
+    if(personRoom){
+      personPF=calcPF_at_point(personRoom,(state.person.c-personRoom.x)/personRoom.w,(state.person.r-personRoom.y)/personRoom.h);
+      markerColor=pfColor(personPF);
+    } else {
+      personPF=1.0;
+      markerColor='#ff3333'; // open field = poor (red)
+    }
+
+    // Drop shadow
+    ctx.beginPath();ctx.arc(px,py,R+2,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fill();
+    // Crosshair ring
+    ctx.beginPath();ctx.arc(px,py,R,0,Math.PI*2);
+    ctx.strokeStyle=markerColor;ctx.lineWidth=2;ctx.stroke();
+    ctx.strokeStyle=markerColor;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(px-R*1.6,py);ctx.lineTo(px-R*0.35,py);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(px+R*0.35,py);ctx.lineTo(px+R*1.6,py);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(px,py-R*1.6);ctx.lineTo(px,py-R*0.35);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(px,py+R*0.35);ctx.lineTo(px,py+R*1.6);ctx.stroke();
+    // Person silhouette
+    ctx.fillStyle=markerColor;
+    ctx.beginPath();ctx.arc(px,py-R*0.18,R*0.28,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.moveTo(px-R*0.22,py-R*0.05);ctx.lineTo(px+R*0.22,py-R*0.05);
+    ctx.lineTo(px+R*0.14,py+R*0.42);ctx.lineTo(px-R*0.14,py+R*0.42);ctx.closePath();ctx.fill();
+
+    // PF label pill — always shown, "PF 1" in red outside rooms
+    const pfTxt = personRoom ? 'PF '+Math.round(personPF) : 'PF 1 OPEN';
+    const d2=state.dose;
+    const DR1_cv=d2.mode==='manual'?d2.dr1:estimateDR1(d2.yield,d2.dist,d2.burst||'surface',d2.wind);
+    let DR_pos_cv=DR1_cv/Math.max(personPF,1);
+    // Add hotspot contribution to canvas label too
+    if(state.hotspot.enabled&&state.hotspot.active&&state.hotspot.floor===state.person.floor){
+      const iso_cv=isotopeById(state.hotspot.isotope);
+      const actMBq_cv=state.hotspot.activityGBq*1000;
+      const res_cv=hotspotDoseAt(state.person.c,state.person.r,state.hotspot.c,state.hotspot.r,state.hotspot.floor,iso_cv,actMBq_cv);
+      DR_pos_cv+=res_cv.shielded/8770.0;
+    }
+    const fz2=Math.max(Math.min(cs*0.8,12),9);
+    ctx.font=`bold ${fz2}px 'Courier New',monospace`;
+    const pfLine=pfTxt;
+    const drLine=DR_pos_cv.toFixed(4)+' R/hr';
+    const tw1=ctx.measureText(pfLine).width, tw2=ctx.measureText(drLine).width;
+    const pillW=Math.max(tw1,tw2)+10, pillH=fz2*2+8;
+    const pillX=px-pillW/2, pillY=py-R-pillH-4;
+    ctx.fillStyle='rgba(0,0,0,0.88)';ctx.fillRect(pillX,pillY,pillW,pillH);
+    ctx.strokeStyle=markerColor;ctx.lineWidth=1;ctx.strokeRect(pillX,pillY,pillW,pillH);
+    ctx.textAlign='center';
+    ctx.fillStyle=markerColor;ctx.fillText(pfLine,px,pillY+fz2+1);
+    ctx.fillStyle='#ffb000';ctx.fillText(drLine,px,pillY+pillH-3);
+  }
+
+  // Room draw preview
+  if(state.drawState.active&&state.tool==='room'){
+    const d=state.drawState;
+    const x=Math.min(d.startC,d.curC)*cs,y=Math.min(d.startR,d.curR)*cs;
+    const w=(Math.abs(d.curC-d.startC)+1)*cs,h=(Math.abs(d.curR-d.startR)+1)*cs;
+    ctx.strokeStyle='#00ff4177';ctx.lineWidth=1;
+    ctx.setLineDash([4,3]);ctx.strokeRect(x,y,w,h);ctx.setLineDash([]);
+    const fw=(Math.abs(d.curC-d.startC)+1)*FT_PER_CELL,fh=(Math.abs(d.curR-d.startR)+1)*FT_PER_CELL;
+    ctx.fillStyle='#00ff41';ctx.font="11px 'Courier New',monospace";ctx.textAlign='center';
+    ctx.fillText(`${fw}×${fh}ft`,x+w/2,y+h/2);
+  }
+
+  ctx.fillStyle='#00ff4133';ctx.font="11px 'Courier New',monospace";ctx.textAlign='left';
+  ctx.fillText('// '+(FLOOR_META[state.floor]||{label:'FLOOR'}).label,7,16);
+
+  const scaleW=FT_PER_CELL*5*cs;
+  ctx.fillStyle='#003300';ctx.fillRect(8,canvas.height-20,scaleW,5);
+  ctx.fillStyle='#00aa33';ctx.fillRect(8,canvas.height-20,scaleW/2,5);
+  ctx.fillStyle='#336633';ctx.font="9px 'Courier New',monospace";ctx.textAlign='left';
+  ctx.fillText('20ft',8+scaleW+3,canvas.height-16);
+
+  updateZoomLabel();
+}
+
+function toggleKey(){
+  const body=document.getElementById('map-key-body');
+  const arrow=document.getElementById('map-key-arrow');
+  const collapsed=body.classList.toggle('collapsed');
+  arrow.textContent=collapsed?'▼':'▲';
+}
+
+function updateZoomLabel(){
+  const el=document.getElementById('zoom-level');
+  if(el) el.textContent=Math.round(state.zoom*100)+'%';
+}
+
+// ============================================================
+// UI UPDATES
+// ============================================================
+function updateFloorButtons(){
+  ['basement','ground','upper','upper2'].forEach(fl=>{
+    const btn=document.getElementById('flbtn-'+fl); if(!btn)return;
+    const count=state.rooms.filter(r=>r.floor===fl).length;
+    btn.classList.toggle('active',fl===state.floor);
+    btn.classList.toggle('has-rooms',count>0);
+    btn.title=FLOOR_META[fl].label+` (${count} rooms)`;
+  });
+  const cnt=state.rooms.filter(r=>r.floor===state.floor).length;
+  document.getElementById('floor-room-count').textContent=cnt+' room'+(cnt!==1?'s':'')+' on this floor';
+}
+
+function updateRoomProps(){
+  const room=state.rooms.find(r=>r.id===state.selectedRoom);
+  document.getElementById('room-props-empty').style.display=room?'none':'block';
+  document.getElementById('room-props').style.display=room?'block':'none';
+  if(!room)return;
+  document.getElementById('rp-name').value=room.name;
+  document.getElementById('rp-floor').value=room.floor;
+  // Dimensions in display units — skip if that input is focused
+  const wFt=room.w*FT_PER_CELL, hFt=room.h*FT_PER_CELL;
+  const wDisp=state.units==='metric'?+(wFt*0.3048).toFixed(1):wFt;
+  const hDisp=state.units==='metric'?+(hFt*0.3048).toFixed(1):hFt;
+  const wEl=document.getElementById('rp-width');
+  const dEl=document.getElementById('rp-depth');
+  const whEl=document.getElementById('rp-wallht');
+  const occEl=document.getElementById('rp-occ');
+  if(document.activeElement!==wEl){ wEl.value=wDisp; }
+  if(document.activeElement!==dEl){ dEl.value=hDisp; }
+  document.getElementById('rp-width-unit').textContent=state.units==='metric'?'m':'ft';
+  document.getElementById('rp-depth-unit').textContent=state.units==='metric'?'m':'ft';
+  if(document.activeElement!==whEl) whEl.value=ftToDisplay(room.wallHeight);
+  if(document.activeElement!==occEl) occEl.value=room.occupancy;
+  document.getElementById('rp-notes').value=room.notes||'';
+  const {PF}=getCachedPF(room);
+  const pfEl=document.getElementById('rp-pf');
+  pfEl.textContent=Math.round(PF);
+  pfEl.className=PF>=40?'pf-green':PF>=10?'pf-yellow':'pf-red';
+  document.getElementById('rp-pf-label').textContent=pfLabel(PF);
+  const dimFt=`${wFt}×${hFt}ft`;
+  const dimM=`${(wFt*0.3048).toFixed(1)}×${(hFt*0.3048).toFixed(1)}m`;
+  document.getElementById('sb-room').textContent=`${room.name} | PF ${Math.round(PF)} | ${state.units==='metric'?dimM:dimFt} | ${FLOOR_META[room.floor].short}`;
+}
+
+function updateWallProps(){
+  const wall=state.walls.find(w=>w.id===state.selectedWall);
+  document.getElementById('wall-props-empty').style.display=wall?'none':'block';
+  document.getElementById('wall-props').style.display=wall?'block':'none';
+  if(wall){
+    const dx=(wall.x2-wall.x1)*FT_PER_CELL, dy=(wall.y2-wall.y1)*FT_PER_CELL;
+    const lenFt=Math.sqrt(dx*dx+dy*dy);
+    const lenDisp=state.units==='metric'?+(lenFt*0.3048).toFixed(2):+lenFt.toFixed(1);
+    const angleDeg=Math.atan2(dy,dx)*(180/Math.PI);
+    document.getElementById('wp-dims').textContent=
+      `${state.units==='metric'?(lenFt*0.3048).toFixed(2)+'m':lenFt.toFixed(1)+'ft'} · ${angleDeg.toFixed(1)}°`;
+    // Don't overwrite inputs the user is currently editing
+    const lenEl=document.getElementById('wp-length');
+    const angEl=document.getElementById('wp-angle');
+    if(document.activeElement!==lenEl) lenEl.value=lenDisp;
+    document.getElementById('wp-length-unit').textContent=state.units==='metric'?'m':'ft';
+    if(document.activeElement!==angEl) angEl.value=angleDeg.toFixed(1);
+  }
+}
+
+function updateAssemblyTab(){
+  // Check if a wall is selected and use its faces (A/B)
+  const wall=state.walls.find(w=>w.id===state.selectedWall);
+  const room=state.rooms.find(r=>r.id===state.selectedRoom);
+
+  // Show/hide wall face buttons
+  const wallFaceBtns=['A','B'];
+  const roomFaceBtns=['N','S','E','W','R','F'];
+  wallFaceBtns.forEach(fk=>{const el=document.getElementById('face-'+fk);if(el)el.style.display=wall?'':'none';});
+  roomFaceBtns.forEach(fk=>{const el=document.getElementById('face-'+fk);if(el)el.style.display=room?'':'none';});
+
+  if(!room&&!wall){
+    document.getElementById('face-info').textContent='Select a room or wall to edit assemblies';
+    document.getElementById('layer-stack').innerHTML='';
+    document.getElementById('xsec-bar').innerHTML='';
+    document.getElementById('openings-list').innerHTML='';
+    document.getElementById('asm-stats').innerHTML='';
+    return;
+  }
+
+  const ft2m=0.3048;
+  let face, faceLabel;
+  if(wall){
+    // Only A and B faces for walls
+    const fKey=(state.selectedFace==='A'||state.selectedFace==='B')?state.selectedFace:'A';
+    if(state.selectedFace!=='A'&&state.selectedFace!=='B') selectFace('A');
+    face=wall.faces[fKey];
+    faceLabel=`Wall / ${fKey} side`;
+    document.getElementById('face-info').innerHTML=`<span style="color:var(--text2)">Standalone Wall</span> / ${fKey} side`;
+  } else {
+    const fKey=state.selectedFace;
+    face=room.faces[fKey];
+    const wallSpan=(fKey==='N'||fKey==='S')?room.w*FT_PER_CELL:room.h*FT_PER_CELL;
+    const wallArea=(fKey==='R'||fKey==='F')?(room.w*FT_PER_CELL*ft2m)*(room.h*FT_PER_CELL*ft2m):(wallSpan*ft2m)*(room.wallHeight*ft2m);
+    const {frac:nbFrac}=fKey!=='R'&&fKey!=='F'?neighborCoverage(room,fKey):{frac:0};
+    document.getElementById('face-info').innerHTML=
+      `<span style="color:var(--text2)">${room.name}</span> / ${fKey} face -- ${wallSpan}ft span`+
+      (nbFrac>=0.15?` <span style="color:var(--teal)">⚡ ${(nbFrac*100).toFixed(0)}% neighbor-shielded</span>`:'');
+  }
+
+  const ls=document.getElementById('layer-stack'); ls.innerHTML='';
+  face.layers.forEach((l,i)=>{
+    const mat=matById(l.matId); const mass=mat.rho*mat.thickness;
+    const div=document.createElement('div'); div.className='layer-item';
+    div.innerHTML=`<span class="lname">${mat.label}</span><span class="lmass">${mass.toFixed(1)} kg/m²</span>`+
+      `<button class="layer-btn" onclick="S.moveLayer(${i},-1)">↑</button>`+
+      `<button class="layer-btn" onclick="S.moveLayer(${i},1)">↓</button>`+
+      `<button class="layer-btn" onclick="S.removeLayer(${i})">✕</button>`;
+    ls.appendChild(div);
+  });
+  const xb=document.getElementById('xsec-bar'); xb.innerHTML='';
+  const totalT=face.layers.reduce((s,l)=>s+matById(l.matId).thickness,0)||1;
+  const segColors=['#1a3a1a','#2a4a2a','#143314','#3a4a1a','#1a2a4a','#4a1a2a','#1a4a4a','#3a3a14','#2a1a4a'];
+  face.layers.forEach((l,i)=>{
+    const mat=matById(l.matId); const pct=(mat.thickness/totalT*100).toFixed(1);
+    const seg=document.createElement('div'); seg.className='xsec-seg';
+    seg.style.cssText=`width:${pct}%;background:${segColors[i%segColors.length]};border-right:1px solid #333`;
+    seg.title=mat.label; if(parseFloat(pct)>10)seg.textContent=mat.label.slice(0,5);
+    xb.appendChild(seg);
+  });
+  const ol=document.getElementById('openings-list'); ol.innerHTML='';
+  if(wall){
+    // Standalone walls support openings on both faces
+    const fKey=(state.selectedFace==='A'||state.selectedFace==='B')?state.selectedFace:'A';
+    const wFace=wall.faces[fKey];
+    const ft2m=0.3048;
+    const dx=(wall.x2-wall.x1)*FT_PER_CELL, dy=(wall.y2-wall.y1)*FT_PER_CELL;
+    const wallLenFt=Math.sqrt(dx*dx+dy*dy);
+    const wallHt=8; // standalone walls default 8ft height
+    const wallArea_m2=(wallLenFt*ft2m)*(wallHt*ft2m);
+    wFace.openings.forEach((op,i)=>{
+      const ot=OPENING_TYPES[op.type];if(!ot)return;
+      const area=ot.w*ot.h,wallAreaFrac=(area/wallArea_m2*100).toFixed(1);
+      const div=document.createElement('div');div.className='opening-item';
+      div.innerHTML=`<span class="oname">${ot.label}</span>`+
+        `<span style="color:var(--amber);font-size:9px">${wallAreaFrac}% area | T=${ot.T}</span>`+
+        `<button class="layer-btn" onclick="S.removeOpening(${i})">✕</button>`;
+      ol.appendChild(div);
+    });
+    if(!wFace.openings.length) ol.innerHTML='<div class="note">No openings on this face. Use Quick-Add below.</div>';
+  } else {
+    const fKey=state.selectedFace;
+    if(fKey==='R'||fKey==='F'){ol.innerHTML='<div class="note">Openings not modeled on roof/floor surfaces.</div>';}
+    else{
+      face.openings.forEach((op,i)=>{
+        const ot=OPENING_TYPES[op.type]; if(!ot)return;
+        const wallSpan=(fKey==='N'||fKey==='S')?room.w*FT_PER_CELL:room.h*FT_PER_CELL;
+        const wallArea=(wallSpan*ft2m)*(room.wallHeight*ft2m);
+        const area=ot.w*ot.h,wallAreaFrac=(area/wallArea*100).toFixed(1);
+        const div=document.createElement('div'); div.className='opening-item';
+        div.innerHTML=`<span class="oname">${ot.label}</span>`+
+          `<span style="color:var(--amber);font-size:9px">${wallAreaFrac}% area | T=${ot.T}</span>`+
+          `<button class="layer-btn" onclick="S.removeOpening(${i})">✕</button>`;
+        ol.appendChild(div);
+      });
+      if(!face.openings.length)ol.innerHTML='<div class="note">No openings on this face.</div>';
+    }
+  }
+  const T_asm=assemblyT(face.layers),mass=assemblyMass_kgm2(face.layers);
+  const hvls=T_asm>0?-Math.log2(T_asm):0;
+  // Skyshine note for ground-floor roof face
+  const isGroundRoof=room&&!wall&&state.selectedFace==='R'&&room.floor==='ground';
+  const fSky=state.buildingCfg.skyShineFactor||0.25;
+  const ssEnabled=state.buildingCfg.skyShineFactor>0;
+  const skyShineLine=isGroundRoof?`
+    <div style="margin-top:6px;padding:5px 8px;background:var(--bg3);border:1px solid var(--amber);border-left:3px solid var(--amber)">
+      <div style="color:var(--amber);font-size:10px;letter-spacing:1px;margin-bottom:3px">☁ SKYSHINE COMPONENT</div>
+      <div style="color:var(--text2);font-size:10px;line-height:1.6">
+        Skyshine is scattered gamma arriving from the sky hemisphere -- not just direct ground-source radiation.
+        On the ground floor, it adds an extra dose path that bypasses wall mass.<br><br>
+        Current sky factor: <strong style="color:var(--amber)">${ssEnabled?fSky.toFixed(2):'OFF'}</strong>
+        ${ssEnabled?`(NCRP-165 range: 0.15-0.40)<br>
+        Skyshine through this roof: <strong style="color:var(--amber)">${(fSky*T_asm*100).toFixed(2)}%</strong> of open-field dose leaks in.
+        <br>A heavier roof reduces this -- each HVL of concrete halves the skyshine contribution.`:''}
+      </div>
+    </div>`:'';
+  document.getElementById('asm-stats').innerHTML=`
+    <div class="stat-grid">
+      <div class="stat-box"><div class="sv">${(mass*0.2048).toFixed(1)}</div><div class="sl">LB/FT² MASS</div></div>
+      <div class="stat-box"><div class="sv">${(T_asm*100).toFixed(2)}%</div><div class="sl">WALL TRANS.</div></div>
+      <div class="stat-box"><div class="sv">${hvls.toFixed(2)}</div><div class="sl">HVL COUNT</div></div>
+      <div class="stat-box"><div class="sv">${(1/Math.max(T_asm,0.0001)).toFixed(0)}</div><div class="sl">FACE PF EST.</div></div>
+    </div>
+    <div class="note">HVL = half-value layers at 0.662 MeV (Cs-137). Each HVL halves dose.</div>
+    ${skyShineLine}`;
+}
+
+function updateLibraryTab(){
+  const ll=document.getElementById('lib-list'); ll.innerHTML='';
+  if(!state.lib.length){ll.innerHTML='<div class="note">No saved assemblies. Build a layer stack and click SAVE TO LIB.</div>';return;}
+  state.lib.forEach((asm,i)=>{
+    const mass=assemblyMass_kgm2(asm.layers),T=assemblyT(asm.layers);
+    const div=document.createElement('div');div.className='lib-item';
+    div.innerHTML=`<div class="li-name">${asm.name}</div>`+
+      `<div class="li-detail">${asm.layers.length} layers · ${mass.toFixed(1)} kg/m² · T=${(T*100).toFixed(2)}% · PF≈${(1/Math.max(T,0.0001)).toFixed(0)}</div>`+
+      `<div style="margin-top:4px;display:flex;gap:4px">`+
+      `<button class="rp-btn primary" onclick="S.applyLibAssembly(${i})">APPLY TO FACE</button>`+
+      `<button class="rp-btn danger" onclick="S.deleteLibAssembly(${i})">DEL</button></div>`;
+    ll.appendChild(div);
+  });
+}
+
+function updateDoseTab(){
+  if(state.activeTab!=='dose')return;
+  const d=state.dose;
+  const DR1=d.mode==='manual'?d.dr1:estimateDR1(d.yield,d.dist,d.burst||'surface',d.wind);
+  let PF=1;
+  const selRoom=state.rooms.find(r=>r.id===state.selectedRoom);
+  if(selRoom){PF=getCachedPF(selRoom).PF;}
+  else if(state.rooms.length){let best=0;for(const r of state.rooms){const p=getCachedPF(r).PF;if(p>best)best=p;}PF=best;}
+  const doseR=calcAccumulatedDose(DR1,PF,d.entry,d.duration);
+  const doseDisp=convertDose(doseR,d.unit);
+  const risk=riskClass(doseR);
+  document.getElementById('dose-results').innerHTML=`
+    <div class="stat-grid">
+      <div class="stat-box"><div class="sv">${DR1.toFixed(1)}</div><div class="sl">DR(1) R/HR</div></div>
+      <div class="stat-box"><div class="sv">${Math.round(PF)}</div><div class="sl">PF APPLIED</div></div>
+    </div>
+    <div class="stat-box" style="margin-bottom:6px">
+      <div class="sv" style="font-size:20px">${doseDisp.toFixed(2)} ${d.unit}</div>
+      <div class="sl">ACCUMULATED DOSE -- H+${d.entry} through H+${(d.entry+d.duration).toFixed(0)}</div>
+    </div>
+    <div class="dose-risk ${risk.cls}">${risk.label}</div>
+    <div class="note" style="margin-top:8px">
+      Decay model: DR(t) = DR(1) × t<sup>-1.2</sup> (Glasstone &amp; Dolan 1977)<br>
+      ${d.mode==='calc'?'DR(1) estimated via simplified Haaland model. Use NukeMap for precision.':'DR(1) entered manually -- ensure it is H+1 reference dose rate.'}<br>
+      PF source: ${selRoom?selRoom.name:'best available room'}.
+    </div>`;
+}
+
+function updatePFSummaryTab(){
+  const cont=document.getElementById('pf-summary-content');
+  if(!state.rooms.length){cont.innerHTML='<div class="note">No rooms drawn yet. Use the Draw Room tool.</div>';return;}
+  let html='',totalPF=0,count=0;
+  for(const fl of ['basement','ground','upper','upper2']){
+    const flRooms=state.rooms.filter(r=>r.floor===fl);if(!flRooms.length)continue;
+    html+=`<div style="color:var(--text3);font-size:10px;margin:6px 0 3px;letter-spacing:1px">${FLOOR_META[fl].label}</div>`;
+    for(const r of flRooms){
+      const {PF}=getCachedPF(r);totalPF+=PF;count++;
+      const cls=PF>=40?'pf-green':PF>=10?'pf-yellow':'pf-red';
+      html+=`<div class="room-list-item ${state.selectedRoom===r.id?'selected':''}" onclick="S.selectRoomById('${r.id}')">
+        <div style="flex:1"><div style="font-size:11px;color:var(--text)">${r.name}</div>
+        <div style="font-size:9px;color:var(--text3)">${r.w*FT_PER_CELL}×${r.h*FT_PER_CELL}ft | ht:${r.wallHeight}ft</div></div>
+        <span class="rli-pf ${cls}">PF ${Math.round(PF)}</span></div>`;
+    }
+  }
+  const avgPF=count?totalPF/count:1,avgCls=avgPF>=40?'pf-green':avgPF>=10?'pf-yellow':'pf-red';
+  cont.innerHTML=`<div class="stat-box" style="margin-bottom:8px"><div class="sv ${avgCls}" style="font-size:22px">PF ${Math.round(avgPF)}</div>
+    <div class="sl">AVERAGE -- ${count} ROOM${count>1?'S':''} ACROSS ALL FLOORS</div></div>${html}`;
+}
+
+function updateRoomsTab(){
+  const rl=document.getElementById('rooms-list');rl.innerHTML='';
+  if(!state.rooms.length){rl.innerHTML='<div class="note">No rooms. Use the Draw Room tool (R).</div>';return;}
+  for(const fl of ['basement','ground','upper','upper2']){
+    const flRooms=state.rooms.filter(r=>r.floor===fl);if(!flRooms.length)continue;
+    const hdr=document.createElement('div');
+    hdr.style.cssText='color:var(--text3);font-size:10px;margin:6px 0 3px;letter-spacing:1px';
+    hdr.textContent=FLOOR_META[fl].label;rl.appendChild(hdr);
+    for(const r of flRooms){
+      const {PF}=getCachedPF(r);const cls=PF>=40?'pf-green':PF>=10?'pf-yellow':'pf-red';
+      const div=document.createElement('div');
+      div.className='room-list-item'+(state.selectedRoom===r.id?' selected':'');
+      div.innerHTML=`<div style="flex:1"><div style="font-size:11px;color:var(--text)">${r.name}</div>
+        <div style="font-size:9px;color:var(--text3)">${r.w*FT_PER_CELL}×${r.h*FT_PER_CELL}ft · ht ${r.wallHeight}ft · occ ${r.occupancy}</div></div>
+        <span class="rli-pf ${cls}">PF ${Math.round(PF)}</span>
+        <button class="rp-btn danger" onclick="event.stopPropagation();S.deleteRoom('${r.id}')">DEL</button>`;
+      div.onclick=()=>selectRoomById(r.id);rl.appendChild(div);
+    }
+  }
+}
+
+function updateStatusBar(){
+  document.getElementById('sb-tool').textContent='TOOL: '+state.tool.toUpperCase();
+  document.getElementById('sb-floor').textContent='FLOOR: '+(FLOOR_META[state.floor]||{label:'?'}).label;
+  document.getElementById('sb-undo').textContent='Undo: '+state.undoStack.length;
+  document.getElementById('sb-rooms-count').textContent='Rooms: '+state.rooms.length+' Walls: '+state.walls.length;
+}
+
+function updateAll(){
+  updateFloorButtons();
+  updateRoomProps();
+  updateWallProps();
+  updateBuildingConfigDisplay();
+  updateAssemblyTab();
+  if(state.activeTab==='library')updateLibraryTab();
+  if(state.activeTab==='dose')updateDoseTab();
+  if(state.activeTab==='pfsummary')updatePFSummaryTab();
+  if(state.activeTab==='rooms')updateRoomsTab();
+  if(state.person.active)updatePersonReadout();
+  updateStatusBar();
+  drawCanvas();
+}
+
+function updateBuildingConfigDisplay(){
+  // Keep building config inputs in sync with current display units
+  const bsmtEl=document.getElementById('cfg-bsmt-depth');
+  if(bsmtEl) bsmtEl.value=ftToDisplay(state.buildingCfg.bsmtDepth);
+}
+
+function populateMaterialSelector(){
+  const sel=document.getElementById('add-mat-sel');sel.innerHTML='';
+  const cats=[...new Set(MATERIALS.map(m=>m.cat))];
+  cats.forEach(cat=>{
+    const og=document.createElement('optgroup');og.label=cat;
+    MATERIALS.filter(m=>m.cat===cat).forEach(m=>{
+      const o=document.createElement('option');o.value=m.id;o.textContent=m.label;og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+
+// ============================================================
+// PUBLIC API
+// ============================================================
+// Unit helpers -- internal storage is always imperial (ft, miles)
+function ftToDisplay(ft){ return state.units==='metric'?+(ft*0.3048).toFixed(2):+ft.toFixed(2); }
+function displayToFt(v){ return state.units==='metric'?v/0.3048:v; }
+function miToDisplay(mi){ return state.units==='metric'?+(mi*1.60934).toFixed(2):+mi.toFixed(2); }
+function displayToMi(v){ return state.units==='metric'?v/1.60934:v; }
+
+function setUnits(u){
+  const prev=state.units;
+  state.units=u;
+  document.getElementById('btn-imperial').classList.toggle('active',u==='imperial');
+  document.getElementById('btn-metric').classList.toggle('active',u==='metric');
+  // Update all unit labels
+  document.getElementById('dist-unit').textContent=u==='imperial'?'mi':'km';
+  document.getElementById('cfg-depth-unit').textContent=u==='imperial'?'ft':'m';
+  document.getElementById('wallht-unit').textContent=u==='imperial'?'ft':'m';
+  // Update dose distance slider label (wind always mph -- physical model constant)
+  // Update building config inputs to reflect new units
+  const bsmtEl=document.getElementById('cfg-bsmt-depth');
+  if(bsmtEl){
+    const valFt=state.buildingCfg.bsmtDepth;
+    bsmtEl.value=ftToDisplay(valFt);
+    bsmtEl.step=u==='metric'?'0.1':'0.5';
+    bsmtEl.min=u==='metric'?'0.6':'2';
+    bsmtEl.max=u==='metric'?'12':'40';
+  }
+  // Update selected room wall height
+  const whtEl=document.getElementById('rp-wallht');
+  if(whtEl){
+    const room=state.rooms.find(r=>r.id===state.selectedRoom);
+    if(room){
+      whtEl.value=ftToDisplay(room.wallHeight);
+      whtEl.step=u==='metric'?'0.1':'0.5';
+      whtEl.min=u==='metric'?'1.5':'5';
+      whtEl.max=u==='metric'?'7.5':'24';
+    }
+  }
+  // Dose distance slider
+  const distEl=document.getElementById('nv-dist');
+  const distSl=document.getElementById('sl-dist');
+  if(distEl&&distSl){
+    const valMi=state.dose.dist;
+    const disp=miToDisplay(valMi);
+    distEl.value=disp;
+    distSl.value=disp;
+    distSl.max=u==='metric'?'160':'100';
+  }
+  invalidateHeatmap();
+  updateAll();
+}
+
+function setFloor(f){state.floor=f;updateAll();}
+function setTool(t){
+  state.tool=t;
+  ['select','room','wall','opening','person','hotspot'].forEach(tt=>{const el=document.getElementById('tool-'+tt);if(el)el.classList.toggle('active',tt===t);});
+  canvas.style.cursor=t==='room'?'crosshair':t==='wall'?'crosshair':t==='opening'?'cell':t==='person'?'copy':t==='hotspot'?'crosshair':'default';
+  updateStatusBar();
+}
+
+function selectRoomById(id){
+  state.selectedRoom=id;
+  state.selectedWall=null;
+  const room=state.rooms.find(r=>r.id===id);
+  if(room&&room.floor!==state.floor)setFloor(room.floor);
+  updateAll();
+}
+
+function selectFace(f){
+  state.selectedFace=f;
+  ['N','S','E','W','R','F','A','B'].forEach(fk=>{const el=document.getElementById('face-'+fk);if(el)el.classList.toggle('active',fk===f);});
+  updateAssemblyTab();drawCanvas();
+}
+
+function updateRoomProp(key,val){
+  const room=state.rooms.find(r=>r.id===state.selectedRoom);if(!room)return;
+  pushUndo();
+  // wallHeight stored internally in ft; input arrives in display units
+  if(key==='wallHeight') val=displayToFt(parseFloat(val));
+  room[key]=val;
+  if(key==='floor')setFloor(val);
+  invalidateHeatmap();
+  updateAll();
+}
+
+// Set room W or H from a display-unit dimension input (ft or m)
+function setRoomDimension(axis, dispVal){
+  const room=state.rooms.find(r=>r.id===state.selectedRoom);if(!room)return;
+  // Convert display value to feet, then to cells (1 cell = FT_PER_CELL ft)
+  let ft=state.units==='metric'?dispVal/0.3048:dispVal;
+  ft=Math.max(FT_PER_CELL,ft); // minimum 1 cell
+  const cells=Math.max(1,Math.round(ft/FT_PER_CELL));
+  pushUndo();
+  room[axis]=cells;
+  // Clamp position so room stays in grid
+  if(axis==='w') room.x=Math.max(0,Math.min(GRID_COLS-room.w,room.x));
+  if(axis==='h') room.y=Math.max(0,Math.min(GRID_ROWS-room.h,room.y));
+  invalidateHeatmap();
+  updateAll();
+}
+
+// Resize wall to a new length, keeping its start point and angle fixed
+function setWallLength(dispLen){
+  const wall=state.walls.find(w=>w.id===state.selectedWall);if(!wall)return;
+  let lenFt=state.units==='metric'?dispLen/0.3048:dispLen;
+  lenFt=Math.max(1,lenFt);
+  const lenCells=lenFt/FT_PER_CELL;
+  const dx=wall.x2-wall.x1, dy=wall.y2-wall.y1;
+  const curLen=Math.sqrt(dx*dx+dy*dy)||1;
+  const ux=dx/curLen, uy=dy/curLen;
+  pushUndo();
+  wall.x2=wall.x1+ux*lenCells;
+  wall.y2=wall.y1+uy*lenCells;
+  invalidateHeatmap();
+  updateAll();
+}
+
+// Rotate wall to a new angle (degrees), keeping its midpoint and length fixed
+function setWallAngle(angleDeg){
+  const wall=state.walls.find(w=>w.id===state.selectedWall);if(!wall)return;
+  const cx=(wall.x1+wall.x2)/2, cy=(wall.y1+wall.y2)/2;
+  const dx=wall.x2-wall.x1, dy=wall.y2-wall.y1;
+  const halfLen=Math.sqrt(dx*dx+dy*dy)/2;
+  const rad=angleDeg*Math.PI/180;
+  pushUndo();
+  wall.x1=cx-Math.cos(rad)*halfLen;
+  wall.y1=cy-Math.sin(rad)*halfLen;
+  wall.x2=cx+Math.cos(rad)*halfLen;
+  wall.y2=cy+Math.sin(rad)*halfLen;
+  invalidateHeatmap();
+  updateAll();
+}
+
+function toggleSkyshine(){
+  const cb=document.getElementById('cfg-skyshine');
+  cb.checked=!cb.checked;
+  updateBuildingCfg();
+  syncSkyshineBtnState();
+}
+
+function syncSkyshineBtnState(){
+  const on=document.getElementById('cfg-skyshine').checked;
+  const btn=document.getElementById('btn-skyshine-toggle');
+  const lbl=document.getElementById('skyshine-state-label');
+  const row=document.getElementById('skyshine-factor-row');
+  if(btn){
+    btn.classList.toggle('active',on);
+    btn.style.borderColor=on?'var(--green)':'var(--border)';
+    btn.style.color=on?'var(--green)':'var(--text3)';
+  }
+  if(lbl){ lbl.textContent=on?'ON':'OFF'; lbl.style.color=on?'var(--green)':'#ff3333'; }
+  if(row) row.style.opacity=on?'1':'0.4';
+}
+
+function updateBuildingCfg(){
+  state.buildingCfg.hasBasement=document.getElementById('cfg-basement').checked;
+  // bsmtDepth stored in ft; input arrives in display units
+  state.buildingCfg.bsmtDepth=displayToFt(parseFloat(document.getElementById('cfg-bsmt-depth').value)||8);
+  state.buildingCfg.soilDensity=parseInt(document.getElementById('cfg-soil').value)||1800;
+  state.buildingCfg.aboveGradeStories=parseInt(document.getElementById('cfg-stories').value)||1;
+  const ssOn=document.getElementById('cfg-skyshine').checked;
+  const ssVal=parseFloat(document.getElementById('cfg-skyshine-val').value)||0.25;
+  state.buildingCfg.skyShineFactor=ssOn?ssVal:0;
+  syncSkyshineBtnState();
+  invalidateHeatmap();
+  updateAll();
+}
+
+function getCurrentFace(){
+  const wall=state.walls.find(w=>w.id===state.selectedWall);
+  if(wall){
+    const fKey=(state.selectedFace==='A'||state.selectedFace==='B')?state.selectedFace:'A';
+    return {face:wall.faces[fKey],source:'wall'};
+  }
+  const room=state.rooms.find(r=>r.id===state.selectedRoom);
+  if(room) return {face:room.faces[state.selectedFace],source:'room'};
+  return {face:null,source:null};
+}
+
+function addLayer(){
+  const {face}=getCurrentFace();
+  if(!face){alert('Select a room or wall first.');return;}
+  pushUndo();face.layers.push({matId:document.getElementById('add-mat-sel').value,id:uid()});invalidateHeatmap();updateAll();
+}
+function removeLayer(i){const {face}=getCurrentFace();if(!face)return;pushUndo();face.layers.splice(i,1);invalidateHeatmap();updateAll();}
+function moveLayer(i,dir){const {face}=getCurrentFace();if(!face)return;const layers=face.layers;const j=i+dir;if(j<0||j>=layers.length)return;pushUndo();[layers[i],layers[j]]=[layers[j],layers[i]];invalidateHeatmap();updateAll();}
+
+function addOpening(type){
+  // Works on standalone walls (face A/B) and room wall faces (N/S/E/W)
+  const wall=state.walls.find(w=>w.id===state.selectedWall);
+  if(wall){
+    const fKey=(state.selectedFace==='A'||state.selectedFace==='B')?state.selectedFace:'A';
+    if(state.selectedFace!=='A'&&state.selectedFace!=='B'){selectFace('A');}
+    pushUndo();wall.faces[fKey].openings.push({type,pos:0.5,id:uid()});invalidateHeatmap();updateAll();
+    return;
+  }
+  const room=state.rooms.find(r=>r.id===state.selectedRoom);
+  if(!room){alert('Select a room or standalone wall first.');return;}
+  if(!['N','S','E','W'].includes(state.selectedFace)){alert('Openings apply to wall faces (N/S/E/W) or standalone wall A/B sides.');return;}
+  pushUndo();room.faces[state.selectedFace].openings.push({type,pos:0.5,id:uid()});invalidateHeatmap();updateAll();
+}
+function removeOpening(i){
+  const wall=state.walls.find(w=>w.id===state.selectedWall);
+  if(wall){
+    const fKey=(state.selectedFace==='A'||state.selectedFace==='B')?state.selectedFace:'A';
+    pushUndo();wall.faces[fKey].openings.splice(i,1);invalidateHeatmap();updateAll();
+    return;
+  }
+  const room=state.rooms.find(r=>r.id===state.selectedRoom);if(!room)return;
+  pushUndo();room.faces[state.selectedFace].openings.splice(i,1);invalidateHeatmap();updateAll();
+}
+function copyFaceToAll(){
+  const room=state.rooms.find(r=>r.id===state.selectedRoom);if(!room)return;pushUndo();
+  const src=JSON.parse(JSON.stringify(room.faces[state.selectedFace]));
+  for(const fk of ['N','S','E','W','R','F']){if(fk===state.selectedFace)continue;room.faces[fk]=JSON.parse(JSON.stringify(src));room.faces[fk].layers.forEach(l=>l.id=uid());room.faces[fk].openings.forEach(o=>o.id=uid());}
+  invalidateHeatmap();updateAll();
+}
+function saveAssemblyToLib(){
+  const {face,source}=getCurrentFace();if(!face)return;
+  const def=source==='wall'?`Wall-${state.selectedFace}`:`${state.rooms.find(r=>r.id===state.selectedRoom)?.name||'Room'}-${state.selectedFace}`;
+  const name=prompt('Assembly name:',def);if(!name)return;
+  state.lib.push({name,layers:JSON.parse(JSON.stringify(face.layers))});
+  saveLib();updateLibraryTab();
+}
+function applyLibAssembly(i){
+  const {face}=getCurrentFace();if(!face){alert('Select a room/wall and face first.');return;}
+  pushUndo();face.layers=JSON.parse(JSON.stringify(state.lib[i].layers));invalidateHeatmap();updateAll();
+}
+function deleteLibAssembly(i){state.lib.splice(i,1);saveLib();updateLibraryTab();}
+function saveLib(){try{localStorage.setItem('sheltermath_lib',JSON.stringify(state.lib));}catch(e){}}
+function loadLib(){try{const d=localStorage.getItem('sheltermath_lib');if(d)state.lib=JSON.parse(d);}catch(e){}}
+
+function switchTab(t){
+  state.activeTab=t;
+  const tabs=['assembly','library','dose','pfsummary','rooms'];
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
+  document.querySelectorAll('.tab-pane').forEach(el=>el.classList.toggle('active',el.id==='pane-'+t));
+  if(t==='dose')updateDoseTab();if(t==='pfsummary')updatePFSummaryTab();
+  if(t==='rooms')updateRoomsTab();if(t==='library')updateLibraryTab();
+}
+
+function updateDoseMode(){
+  const mode=document.querySelector('input[name="dose-mode"]:checked').value;
+  state.dose.mode=mode;
+  document.getElementById('dose-calc-inputs').style.display=mode==='calc'?'':'none';
+  document.getElementById('dose-manual-inputs').style.display=mode==='manual'?'':'none';
+  calcDose();
+}
+function syncSlider(key,val){
+  // Distance is displayed in mi or km; store internally in miles
+  const stored=key==='dist'?displayToMi(parseFloat(val)):parseFloat(val);
+  state.dose[key]=stored;
+  const nv=document.getElementById('nv-'+key);if(nv)nv.value=val;
+  calcDose();
+}
+function syncNum(key,val){
+  const stored=key==='dist'?displayToMi(parseFloat(val)||0):parseFloat(val)||0;
+  state.dose[key]=stored;
+  const sl=document.getElementById('sl-'+key);
+  if(sl&&parseFloat(val)>=parseFloat(sl.min)&&parseFloat(val)<=parseFloat(sl.max))sl.value=val;
+  calcDose();
+}
+function calcDose(){const bt=document.getElementById('burst-type');if(bt)state.dose.burst=bt.value;const du=document.getElementById('dose-unit');if(du)state.dose.unit=du.value;if(state.activeTab==='dose')updateDoseTab();if(state.person.active)updatePersonReadout();}
+
+// -- NEW: Rotate --
+function rotateRoom(degrees){
+  const room=state.rooms.find(r=>r.id===state.selectedRoom);
+  const wall=state.walls.find(w=>w.id===state.selectedWall);
+
+  if(wall){
+    pushUndo();
+    const cx=(wall.x1+wall.x2)/2, cy=(wall.y1+wall.y2)/2;
+    const rad=degrees*Math.PI/180;
+    const cos=Math.cos(rad),sin=Math.sin(rad);
+    const rx1=wall.x1-cx,ry1=wall.y1-cy;
+    const rx2=wall.x2-cx,ry2=wall.y2-cy;
+    wall.x1=Math.round((cx+rx1*cos-ry1*sin)*4)/4;
+    wall.y1=Math.round((cy+rx1*sin+ry1*cos)*4)/4;
+    wall.x2=Math.round((cx+rx2*cos-ry2*sin)*4)/4;
+    wall.y2=Math.round((cy+rx2*sin+ry2*cos)*4)/4;
+    invalidateHeatmap();updateAll();
+    return;
+  }
+
+  if(!room) return;
+  pushUndo();
+  const cx=room.x+room.w/2, cy=room.y+room.h/2;
+  const newW=room.h, newH=room.w;
+  room.x=Math.round(cx-newW/2);
+  room.y=Math.round(cy-newH/2);
+  room.w=newW;
+  room.h=newH;
+  if(degrees===90||degrees>0){
+    const {N,S,E,W,R,F}=room.faces;
+    room.faces={N:W,E:N,S:E,W:S,R,F};
+  } else {
+    const {N,S,E,W,R,F}=room.faces;
+    room.faces={N:E,E:S,S:W,W:N,R,F};
+  }
+  room.x=Math.max(0,Math.min(GRID_COLS-room.w,room.x));
+  room.y=Math.max(0,Math.min(GRID_ROWS-room.h,room.y));
+  invalidateHeatmap();updateAll();
+}
+
+function deleteSelectedWall(){
+  if(!state.selectedWall)return;
+  pushUndo();
+  state.walls=state.walls.filter(w=>w.id!==state.selectedWall);
+  state.selectedWall=null;
+  invalidateHeatmap();updateAll();
+}
+
+// -- ZOOM --
+function zoomIn(){ state.zoom=Math.min(state.zoom*1.25,8); invalidateHeatmap(); drawCanvas(); }
+function zoomOut(){ state.zoom=Math.max(state.zoom/1.25,0.25); invalidateHeatmap(); drawCanvas(); }
+function zoomReset(){ state.zoom=1.0; invalidateHeatmap(); drawCanvas(); }
+
+// Zoom toward/away from the cursor position so the point under the mouse stays fixed.
+function zoomAtPoint(factor, mouseX, mouseY){
+  const wrap=document.getElementById('canvas-wrap');
+  // World position under cursor before zoom
+  const worldX=wrap.scrollLeft+mouseX;
+  const worldY=wrap.scrollTop+mouseY;
+  // Apply zoom
+  const prevZoom=state.zoom;
+  state.zoom=Math.min(Math.max(state.zoom*factor,0.15),10);
+  if(state.zoom===prevZoom) return;
+  invalidateHeatmap();
+  drawCanvas(); // canvas.width/height now updated
+  // Scroll so the same world point stays under cursor
+  const scale=state.zoom/prevZoom;
+  wrap.scrollLeft=worldX*scale-mouseX;
+  wrap.scrollTop =worldY*scale-mouseY;
+}
+
+canvas.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const pos=getCanvasPos(e);
+  const factor=e.deltaY<0?1.18:1/1.18;
+  zoomAtPoint(factor,pos.x,pos.y);
+},{passive:false});
+
+// -- UNDO/REDO --
+function pushUndo(){
+  state.undoStack.push(JSON.stringify({rooms:state.rooms,walls:state.walls}));
+  if(state.undoStack.length>50)state.undoStack.shift();
+  state.redoStack=[];updateStatusBar();
+}
+function undo(){
+  if(!state.undoStack.length)return;
+  state.redoStack.push(JSON.stringify({rooms:state.rooms,walls:state.walls}));
+  const snap=JSON.parse(state.undoStack.pop());
+  state.rooms=snap.rooms;state.walls=snap.walls||[];
+  if(state.selectedRoom&&!state.rooms.find(r=>r.id===state.selectedRoom))state.selectedRoom=null;
+  if(state.selectedWall&&!state.walls.find(w=>w.id===state.selectedWall))state.selectedWall=null;
+  invalidateHeatmap();updateAll();
+}
+function redo(){
+  if(!state.redoStack.length)return;
+  state.undoStack.push(JSON.stringify({rooms:state.rooms,walls:state.walls}));
+  const snap=JSON.parse(state.redoStack.pop());
+  state.rooms=snap.rooms;state.walls=snap.walls||[];
+  invalidateHeatmap();updateAll();
+}
+
+// ============================================================
+// CANVAS MOUSE EVENTS
+// ============================================================
+function getCanvasPos(e){const rect=canvas.getBoundingClientRect();return {x:e.clientX-rect.left,y:e.clientY-rect.top};}
+function getRoomAt(c,r){for(let i=state.rooms.length-1;i>=0;i--){const room=state.rooms[i];if(room.floor!==state.floor)continue;if(c>=room.x&&c<room.x+room.w&&r>=room.y&&r<room.y+room.h)return room;}return null;}
+
+canvas.addEventListener('mousedown',e=>{
+  const pos=getCanvasPos(e);
+  const cs=getCellSize();
+  const fc=pos.x/cs, fr=pos.y/cs; // fractional cell coords
+  const {c,r}=canvasToCellInt(pos.x,pos.y);
+
+  if(e.button===2){
+    const room=getRoomAt(c,r);
+    if(room)showContextMenu(e.clientX,e.clientY,room);
+    else{const wall=getWallAt(fc,fr);if(wall)showWallContextMenu(e.clientX,e.clientY,wall);}
+    return;
+  }
+
+  if(state.tool==='room'){
+    pushUndo();
+    state.drawState={active:true,startC:c,startR:r,curC:c,curR:r};
+  }
+  else if(state.tool==='wall'){
+    // Check for snap at start point
+    const snap=findSnapPoint(fc,fr,null);
+    const startC=snap?snap.c:fc;
+    const startR=snap?snap.r:fr;
+    pushUndo();
+    state.wallDrawState={active:true,startC:fc,startR:fr,curC:fc,curR:fr,snapStart:snap,snapEnd:null};
+  }
+  else if(state.tool==='select'){
+    // Check if click is near the hotspot source marker (allow dragging it with select tool)
+    if(state.hotspot.enabled && state.hotspot.active && state.hotspot.floor===state.floor){
+      const cs2=getCellSize();
+      const sdx=(fc-state.hotspot.c)*cs2, sdy=(fr-state.hotspot.r)*cs2;
+      const sDist=Math.sqrt(sdx*sdx+sdy*sdy);
+      if(sDist < Math.max(cs2*0.8, 14)){
+        // Clicked near source — start dragging it
+        state._hotspotDragging=true;
+        return; // don't select rooms/walls
+      }
+    }
+    const room=getRoomAt(c,r);
+    const wall=getWallAt(fc,fr);
+    if(room){
+      state.selectedRoom=room.id;state.selectedWall=null;
+      state.moveState={active:true,room,startC:c,startR:r,origX:room.x,origY:room.y};
+    } else if(wall){
+      state.selectedWall=wall.id;state.selectedRoom=null;
+      state.wallMoveState={active:true,wall,startC:fc,startR:fr,origX1:wall.x1,origY1:wall.y1,origX2:wall.x2,origY2:wall.y2};
+    } else {
+      state.selectedRoom=null;state.selectedWall=null;
+    }
+    updateAll();
+  }
+  else if(state.tool==='opening'){const room=getRoomAt(c,r);if(room)promptAndPlaceOpening(room,c,r);}
+  else if(state.tool==='person'){
+    state.person.active=true;state.person.c=fc;state.person.r=fr;state.person.floor=state.floor;
+    updatePersonReadout();drawCanvas();
+  }
+  else if(state.tool==='hotspot'&&state.hotspot.enabled){
+    state.hotspot.active=true;
+    state.hotspot.c=fc;state.hotspot.r=fr;
+    state.hotspot.floor=document.getElementById('hs-floor')?.value||state.floor;
+    invalidateHotspot();
+    updateHotspotReadout();
+    if(state.person.active)updatePersonReadout();
+    drawCanvas();
+  }
+});
+
+canvas.addEventListener('mousemove',e=>{
+  const pos=getCanvasPos(e);
+  const cs=getCellSize();
+  const fc=pos.x/cs, fr=pos.y/cs;
+  const {c,r}=canvasToCellInt(pos.x,pos.y);
+  // Update cursor in metric or imperial
+  const dispX=state.units==='metric'?(c*FT_PER_CELL*0.3048).toFixed(1)+'m':c*FT_PER_CELL+'ft';
+  const dispY=state.units==='metric'?(r*FT_PER_CELL*0.3048).toFixed(1)+'m':r*FT_PER_CELL+'ft';
+  document.getElementById('sb-cursor').textContent=`(${c},${r}) = ${dispX} × ${dispY}`;
+
+  if(state.drawState.active){
+    state.drawState.curC=Math.min(Math.max(c,0),GRID_COLS-1);
+    state.drawState.curR=Math.min(Math.max(r,0),GRID_ROWS-1);
+    scheduleDraw();
+  }
+  else if(state.wallDrawState.active){
+    const wd=state.wallDrawState;
+    const startC=wd.snapStart?wd.snapStart.c:wd.startC;
+    const startR=wd.snapStart?wd.snapStart.r:wd.startR;
+
+    // Raw cursor position
+    let curC=Math.min(Math.max(fc,0),GRID_COLS-1);
+    let curR=Math.min(Math.max(fr,0),GRID_ROWS-1);
+
+    // Axis snap: if within AXIS_SNAP_DEG degrees of H or V, lock to that axis
+    const AXIS_SNAP_DEG=8;
+    const dx=curC-startC, dy=curR-startR;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    let axisSnap=null;
+    if(dist>0.3){
+      const angleDeg=Math.atan2(dy,dx)*(180/Math.PI);
+      // Check against 0, 90, 180, -90, -180
+      const nearH=Math.min(Math.abs(angleDeg),Math.abs(Math.abs(angleDeg)-180));
+      const nearV=Math.abs(Math.abs(angleDeg)-90);
+      if(nearH<AXIS_SNAP_DEG){ curR=startR; axisSnap='H'; }
+      else if(nearV<AXIS_SNAP_DEG){ curC=startC; axisSnap='V'; }
+    }
+    wd.curC=curC; wd.curR=curR; wd.axisSnap=axisSnap;
+
+    // Endpoint point-snap (takes priority over axis snap display but both apply)
+    const snap=findSnapPoint(curC,curR,null);
+    wd.snapEnd=snap||null;
+
+    const sbSnap=document.getElementById('sb-snap');
+    if(axisSnap){
+      sbSnap.style.display='';
+      sbSnap.textContent=axisSnap==='H'?'⊸ H-LOCK':'⊹ V-LOCK';
+    } else if(snap){
+      sbSnap.style.display='';
+      sbSnap.textContent='⚡ SNAP';
+    } else {
+      sbSnap.style.display='none';
+    }
+    scheduleDraw();
+  }
+  else if(state.moveState.active){
+    const mv=state.moveState;const dc=c-mv.startC,dr=r-mv.startR;
+    mv.room.x=Math.max(0,Math.min(GRID_COLS-mv.room.w,mv.origX+dc));
+    mv.room.y=Math.max(0,Math.min(GRID_ROWS-mv.room.h,mv.origY+dr));
+    scheduleDraw();
+  }
+  else if(state.wallMoveState.active){
+    const mv=state.wallMoveState;
+    const dc=fc-mv.startC,dr=fr-mv.startR;
+    mv.wall.x1=mv.origX1+dc;mv.wall.y1=mv.origY1+dr;
+    mv.wall.x2=mv.origX2+dc;mv.wall.y2=mv.origY2+dr;
+    scheduleDraw();
+  }
+  else if(state.tool==='person'&&e.buttons===1&&state.person.active&&state.person.floor===state.floor){
+    state.person.c=fc;state.person.r=fr;updatePersonReadout();scheduleDraw();
+  }
+  else if((state.tool==='hotspot'||state._hotspotDragging)&&e.buttons===1&&state.hotspot.active&&state.hotspot.enabled){
+    state.hotspot.c=fc;state.hotspot.r=fr;
+    invalidateHotspot();updateHotspotReadout();
+    if(state.person.active)updatePersonReadout();
+    scheduleDraw();
+  }
+});
+
+canvas.addEventListener('mouseup',e=>{
+  if(state.drawState.active){
+    const d=state.drawState;const x=Math.min(d.startC,d.curC),y=Math.min(d.startR,d.curR);
+    const w=Math.abs(d.curC-d.startC)+1,h=Math.abs(d.curR-d.startR)+1;
+    if(w>=1&&h>=1){const room=defaultRoom(x,y,w,h,state.floor);state.rooms.push(room);state.selectedRoom=room.id;}
+    state.drawState.active=false;invalidateHeatmap();updateAll();
+  }
+  if(state.wallDrawState.active){
+    const wd=state.wallDrawState;
+    const x1=wd.snapStart?wd.snapStart.c:wd.startC;
+    const y1=wd.snapStart?wd.snapStart.r:wd.startR;
+    const x2=wd.snapEnd?wd.snapEnd.c:wd.curC;
+    const y2=wd.snapEnd?wd.snapEnd.r:wd.curR;
+    const dx=x2-x1,dy=y2-y1;
+    const len=Math.sqrt(dx*dx+dy*dy);
+    if(len>0.5){
+      const wall=defaultWall(x1,y1,x2,y2,state.floor);
+      state.walls.push(wall);
+      state.selectedWall=wall.id;
+      state.selectedRoom=null;
+    }
+    state.wallDrawState.active=false;
+    document.getElementById('sb-snap').style.display='none';
+    invalidateHeatmap();updateAll();
+  }
+  if(state.moveState.active){state.moveState.active=false;invalidateHeatmap();updateAll();}
+  if(state.wallMoveState.active){state.wallMoveState.active=false;invalidateHeatmap();updateAll();}
+  if(state._hotspotDragging){state._hotspotDragging=false;invalidateHotspot();updateHotspotReadout();drawCanvas();}
+});
+
+canvas.addEventListener('dblclick',e=>{
+  const pos=getCanvasPos(e);const cs=getCellSize();
+  const {c,r}=canvasToCellInt(pos.x,pos.y);
+  const room=getRoomAt(c,r);
+  if(room){const n=prompt('Room name:',room.name);if(n){pushUndo();room.name=n;updateAll();}}
+});
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+
+function promptAndPlaceOpening(room,c,r){
+  const {x,y,w,h}=room;
+  const dists={N:Math.abs(r-y),S:Math.abs(r-(y+h)),E:Math.abs(c-(x+w)),W:Math.abs(c-x)};
+  const fk=Object.entries(dists).sort((a,b)=>a[1]-b[1])[0][0];
+  const types=Object.keys(OPENING_TYPES).join('/');
+  const type=prompt(`Opening type:\n${types}`,'window');
+  if(!type||!OPENING_TYPES[type])return;
+  const pos=fk==='N'||fk==='S'?(c-x)/w:(r-y)/h;
+  pushUndo();state.selectedRoom=room.id;
+  room.faces[fk].openings.push({type,pos:Math.max(0.1,Math.min(0.9,pos)),id:uid()});
+  state.selectedFace=fk;selectFace(fk);updateAll();
+}
+
+function showContextMenu(mx,my,room){
+  closeContextMenu();state.ctxMenuTarget=room;
+  const menu=document.createElement('div');menu.id='ctx-menu';menu.className='ctx-menu';
+  menu.style.left=mx+'px';menu.style.top=my+'px';
+  menu.innerHTML=`<div class="ctx-item" onclick="S.ctxRename()">Rename</div>
+    <div class="ctx-item" onclick="S.ctxEditDims()">Edit dimensions</div>
+    <div class="ctx-item" onclick="S.rotateRoom(90);S.closeContextMenu()">↻ Rotate 90° CW</div>
+    <div class="ctx-item" onclick="S.rotateRoom(-90);S.closeContextMenu()">↺ Rotate 90° CCW</div>
+    <div class="ctx-item" onclick="S.ctxChangeFloor()">Move to floor...</div>
+    <div class="ctx-item" onclick="S.ctxDuplicate()">Duplicate</div>
+    <div class="ctx-item danger" onclick="S.ctxDelete()">Delete</div>`;
+  document.body.appendChild(menu);
+  setTimeout(()=>document.addEventListener('click',closeContextMenu,{once:true}),0);
+}
+
+function showWallContextMenu(mx,my,wall){
+  closeContextMenu();
+  state.selectedWall=wall.id;state.selectedRoom=null;
+  updateAll();
+  const menu=document.createElement('div');menu.id='ctx-menu';menu.className='ctx-menu';
+  menu.style.left=mx+'px';menu.style.top=my+'px';
+  menu.innerHTML=`<div class="ctx-item" onclick="S.rotateRoom(90);S.closeContextMenu()">↻ Rotate 90° CW</div>
+    <div class="ctx-item" onclick="S.rotateRoom(-90);S.closeContextMenu()">↺ Rotate 90° CCW</div>
+    <div class="ctx-item" onclick="S.rotateRoom(45);S.closeContextMenu()">↷ Rotate 45°</div>
+    <div class="ctx-item" onclick="S.rotateRoom(-45);S.closeContextMenu()">↶ Rotate -45°</div>
+    <div class="ctx-item danger" onclick="S.deleteSelectedWall();S.closeContextMenu()">Delete Wall</div>`;
+  document.body.appendChild(menu);
+  setTimeout(()=>document.addEventListener('click',closeContextMenu,{once:true}),0);
+}
+
+function closeContextMenu(){const m=document.getElementById('ctx-menu');if(m)m.remove();}
+function ctxRename(){const r=state.ctxMenuTarget;if(!r)return;const n=prompt('Name:',r.name);if(n){pushUndo();r.name=n;updateAll();}}
+function ctxEditDims(){const r=state.ctxMenuTarget;if(!r)return;const w=prompt('Width (cells, 1 cell='+FT_PER_CELL+'ft):',r.w);const h=prompt('Height (cells):',r.h);if(w&&h){pushUndo();r.w=Math.max(1,parseInt(w));r.h=Math.max(1,parseInt(h));updateAll();}}
+function ctxChangeFloor(){const r=state.ctxMenuTarget;if(!r)return;const f=prompt('Floor (basement/ground/upper/upper2):',r.floor);if(f&&FLOOR_META[f]){pushUndo();r.floor=f;updateAll();}}
+function ctxDuplicate(){const r=state.ctxMenuTarget;if(!r)return;pushUndo();const nr=JSON.parse(JSON.stringify(r));nr.id=uid();nr.x+=2;nr.y+=2;nr.name+=' copy';for(const fk of Object.keys(nr.faces)){nr.faces[fk].layers.forEach(l=>l.id=uid());nr.faces[fk].openings.forEach(o=>o.id=uid());}state.rooms.push(nr);state.selectedRoom=nr.id;updateAll();}
+function ctxDelete(){const r=state.ctxMenuTarget;if(!r)return;deleteRoom(r.id);}
+function deleteRoom(id){pushUndo();state.rooms=state.rooms.filter(r=>r.id!==id);if(state.selectedRoom===id)state.selectedRoom=null;invalidateHeatmap();updateAll();}
+
+function startDrag(e,side){
+  const panel=document.getElementById(side==='l'?'toolbar':'rpanel');
+  const handle=document.getElementById('drag-'+side);handle.classList.add('dragging');
+  const startX=e.clientX,startW=panel.clientWidth;
+  function onMove(ev){const nw=(side==='l')?(startW+ev.clientX-startX):(startW-ev.clientX+startX);panel.style.width=Math.max(130,Math.min(500,nw))+'px';resizeCanvas();}
+  function onUp(){handle.classList.remove('dragging');document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);}
+  document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
+}
+
+function resizeCanvas(){ drawCanvas(); }
+
+function newProject(){
+  if(!confirm('Start a new project? Unsaved work will be lost.'))return;
+  state.rooms=[];
+  state.walls=[];
+  state.selectedRoom=null;
+  state.selectedWall=null;
+  state.person.active=false;
+  state.hotspot.active=false;
+  state.undoStack=[];
+  state.redoStack=[];
+  document.getElementById('person-readout').style.display='none';
+  document.getElementById('person-hint').style.display='block';
+  invalidateHeatmap();
+  updateAll();
+}
+function exportProject(){
+  const data={version:3,rooms:state.rooms,walls:state.walls,buildingCfg:state.buildingCfg,units:state.units,floor:state.floor};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sheltermath.json';a.click();
+}
+function importProject(ev){
+  const file=ev.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{try{
+    const d=JSON.parse(e.target.result);
+    state.rooms=d.rooms||[];state.walls=d.walls||[];
+    if(d.buildingCfg)Object.assign(state.buildingCfg,d.buildingCfg);
+    if(d.units)setUnits(d.units);if(d.floor)setFloor(d.floor);
+    state.selectedRoom=null;state.selectedWall=null;updateAll();
+  }catch(err){alert('Import failed: '+err.message);}};
+  reader.readAsText(file);ev.target.value='';
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;
+  if(e.key==='s'||e.key==='S')setTool('select');
+  if(e.key==='r'||e.key==='R')setTool('room');
+  if(e.key==='w'||e.key==='W')setTool('wall');
+  if(e.key==='o'||e.key==='O')setTool('opening');
+  if(e.key==='p'||e.key==='P')setTool('person');
+  if((e.key==='g'||e.key==='G')&&state.hotspot.enabled)setTool('hotspot');
+  if(e.key===']')rotateRoom(90);
+  if(e.key==='[')rotateRoom(-90);
+  if((e.key==='Delete'||e.key==='Backspace')){
+    if(state.selectedRoom)deleteRoom(state.selectedRoom);
+    else if(state.selectedWall)deleteSelectedWall();
+  }
+  if(e.ctrlKey&&e.key==='z'){e.preventDefault();undo();}
+  if(e.ctrlKey&&(e.key==='y'||e.key==='Y')){e.preventDefault();redo();}
+  if(e.key==='1')setFloor('basement');if(e.key==='2')setFloor('ground');
+  if(e.key==='3')setFloor('upper');if(e.key==='4')setFloor('upper2');
+  if(e.key==='='||e.key==='+'){const wrap=document.getElementById('canvas-wrap');zoomAtPoint(1.25,wrap.clientWidth/2,wrap.clientHeight/2);}
+  if(e.key==='-'){const wrap=document.getElementById('canvas-wrap');zoomAtPoint(1/1.25,wrap.clientWidth/2,wrap.clientHeight/2);}
+  if(e.key==='0')zoomReset();
+});
+
+new ResizeObserver(()=>resizeCanvas()).observe(document.getElementById('canvas-area'));
+
+function toggleHeatmap(v){state.heatmap.enabled=v;invalidateHeatmap();drawCanvas();}
+function setHeatmapRes(v){state.heatmap.res=parseInt(v)||2;invalidateHeatmap();invalidateHotspot();drawCanvas();}
+
+// ============================================================
+// FLOOR PLAN BACKGROUND IMAGE
+// ============================================================
+function loadFloorplan(ev){
+  const file=ev.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    state.floorplan.dataUrl=e.target.result;
+    state.floorplan.enabled=true;
+    _floorplanImg=new Image();
+    _floorplanImg.onload=()=>drawCanvas();
+    _floorplanImg.src=e.target.result;
+    document.getElementById('floorplan-controls').style.display='block';
+    document.getElementById('floorplan-visible').checked=true;
+  };
+  reader.readAsDataURL(file);
+  ev.target.value='';
+}
+
+function setFloorplanVisible(v){
+  state.floorplan.enabled=v;
+  drawCanvas();
+}
+
+function setFloorplanOpacity(v){
+  state.floorplan.opacity=v;
+  document.getElementById('floorplan-opacity-val').textContent=Math.round(v*100)+'%';
+  drawCanvas();
+}
+
+function clearFloorplan(){
+  state.floorplan.dataUrl=null;
+  state.floorplan.enabled=false;
+  _floorplanImg=null;
+  document.getElementById('floorplan-controls').style.display='none';
+  drawCanvas();
+}
+
+
+
+// ============================================================
+// GAMMA HOT SPOT functions
+// ============================================================
+function populateIsotopeSelector(){
+  const sel=document.getElementById('hs-isotope');if(!sel)return;
+  sel.innerHTML='';
+  ISOTOPES.forEach(iso=>{
+    const o=document.createElement('option');
+    o.value=iso.id;
+    o.textContent=iso.label;
+    sel.appendChild(o);
+  });
+  sel.value=state.hotspot.isotope;
+  updateIsotopeNote();
+}
+
+function updateIsotopeNote(){
+  const iso=isotopeById(document.getElementById('hs-isotope')?.value||state.hotspot.isotope);
+  const noteEl=document.getElementById('hs-iso-note');
+  if(noteEl) noteEl.textContent=`${iso.note} | ${iso.energy_MeV} MeV | ${iso.gamma_uSv_MBq_1m} uSv/hr/MBq@1m`;
+}
+
+function toggleHotspot(on){
+  state.hotspot.enabled=on;
+  document.getElementById('hotspot-off-hint').style.display=on?'none':'block';
+  document.getElementById('hotspot-controls').style.display=on?'block':'none';
+  const keyRow=document.getElementById('key-hotspot-row');
+  if(keyRow) keyRow.style.display=on?'flex':'none';
+  if(on) populateIsotopeSelector();
+  if(!on){ state.hotspot.active=false; invalidateHotspot(); }
+  if(state.person.active)updatePersonReadout();
+  drawCanvas();
+}
+
+function updateHotspotCfg(){
+  const isoSel=document.getElementById('hs-isotope');
+  const actEl=document.getElementById('hs-activity');
+  const flEl=document.getElementById('hs-floor');
+  if(isoSel) state.hotspot.isotope=isoSel.value;
+  if(actEl){ const v=parseFloat(actEl.value); if(v>0) state.hotspot.activityGBq=v; }
+  if(flEl) state.hotspot.floor=flEl.value;
+  updateIsotopeNote();
+  invalidateHotspot();
+  updateHotspotReadout();
+  if(state.person.active)updatePersonReadout();
+  drawCanvas();
+}
+
+function updateHotspotReadout(){
+  const rdEl=document.getElementById('hs-readout');
+  const hintEl=document.getElementById('hs-place-hint');
+  if(!rdEl||!hintEl) return;
+  if(!state.hotspot.active){ rdEl.style.display='none'; hintEl.style.display='block'; return; }
+  rdEl.style.display='block'; hintEl.style.display='none';
+  const iso=isotopeById(state.hotspot.isotope);
+  const actMBq=state.hotspot.activityGBq*1000;
+  const drAt1m=actMBq*iso.gamma_uSv_MBq_1m;
+  const unit=state.hotspot.drUnit||'uSv';
+  document.getElementById('hs-dr-val').textContent=formatDR(drAt1m,unit);
+  document.getElementById('hs-dr-unit').textContent=unitLabel(unit);
+  const ft2m=0.3048;
+  const xFt=(state.hotspot.c*FT_PER_CELL).toFixed(1);
+  const yFt=(state.hotspot.r*FT_PER_CELL).toFixed(1);
+  document.getElementById('hs-pos-label').textContent=
+    state.units==='metric'
+      ? `${(parseFloat(xFt)*ft2m).toFixed(1)}m × ${(parseFloat(yFt)*ft2m).toFixed(1)}m | ${FLOOR_META[state.hotspot.floor].short}`
+      : `${xFt}ft × ${yFt}ft | ${FLOOR_META[state.hotspot.floor].short}`;
+}
+
+function formatDR(uSvhr, unit){
+  if(unit==='mSv') return (uSvhr/1000).toFixed(4);
+  if(unit==='mR')  return (uSvhr*0.114514).toFixed(2);
+  return uSvhr.toFixed(2); // uSv/hr
+}
+function unitLabel(unit){
+  if(unit==='mSv') return 'mSv/hr';
+  if(unit==='mR')  return 'mR/hr';
+  return 'uSv/hr';
+}
+
+function setHotspotDRUnit(u){
+  state.hotspot.drUnit=u;
+  updateHotspotReadout();
+  // Highlight active unit button
+  ['uSv','mSv','mR'].forEach(uu=>{
+    // buttons are anonymous; just re-render readout
+  });
+}
+
+function clearHotspot(){
+  state.hotspot.active=false;
+  invalidateHotspot();
+  updateHotspotReadout();
+  if(state.person.active)updatePersonReadout();
+  drawCanvas();
+}
+
+
+function setHeatmapMode(v){state.heatmap.mode=v;invalidateHeatmap();drawCanvas();}
+
+function updatePersonReadout(){
+  const el=document.getElementById('person-readout'),hint=document.getElementById('person-hint');
+  if(!state.person.active){el.style.display='none';hint.style.display='block';return;}
+  el.style.display='block';hint.style.display='none';
+
+  const c=state.person.c, r=state.person.r;
+  const ci=Math.floor(c), ri=Math.floor(r);
+  const room=getRoomAt(ci,ri);
+
+  const pfEl=document.getElementById('person-pf-val');
+  const pfDescEl=document.getElementById('person-pf-desc');
+  const posEl=document.getElementById('person-pos-label');
+  const roomEl=document.getElementById('person-room-label');
+
+  // Position label
+  const xFt=(c*FT_PER_CELL).toFixed(1), yFt=(r*FT_PER_CELL).toFixed(1);
+  const ft2m=0.3048;
+  posEl.textContent=state.units==='metric'
+    ? `${(c*FT_PER_CELL*ft2m).toFixed(1)}m × ${(r*FT_PER_CELL*ft2m).toFixed(1)}m`
+    : `${xFt}ft × ${yFt}ft`;
+
+  // PF — inside room: calculated; outside: PF=1 (open field)
+  let pf;
+  if(room){
+    pf=calcPF_at_point(room,(c-room.x)/room.w,(r-room.y)/room.h);
+    pfEl.textContent=Math.round(pf);
+    pfEl.style.color=pf>=40?'#00ff41':pf>=10?'#ffb000':'#ff3333';
+    pfDescEl.textContent=pfLabel(pf)+' — '+room.name+' ('+FLOOR_META[room.floor].short+')';
+    pfDescEl.style.color=pf>=40?'#00cc33':pf>=10?'#cc8800':'#cc2222';
+    roomEl.textContent='Inside room';roomEl.style.color='var(--text2)';
+  } else {
+    pf=1.0;
+    pfEl.textContent='1';
+    pfEl.style.color='#ff3333';
+    pfDescEl.textContent='OPEN FIELD — no structural protection';
+    pfDescEl.style.color='#ff3333';
+    roomEl.textContent='Outside all rooms';roomEl.style.color='var(--text3)';
+  }
+
+  // Dose rate estimate
+  // Source 1: fallout ground-shine from Dose tab
+  const d=state.dose;
+  const DR1_fallout=d.mode==='manual'?d.dr1:estimateDR1(d.yield,d.dist,d.burst||'surface',d.wind);
+  let DR_fallout_pos=DR1_fallout/Math.max(pf,1.0); // fallout DR at person position R/hr
+
+  // Source 2: gamma hotspot point source (if active on same floor)
+  let DR_hotspot_pos=0;
+  let hotspotNote='';
+  if(state.hotspot.enabled&&state.hotspot.active&&state.hotspot.floor===state.person.floor){
+    const iso=isotopeById(state.hotspot.isotope);
+    const actMBq=state.hotspot.activityGBq*1000;
+    const result=hotspotDoseAt(c,r,state.hotspot.c,state.hotspot.r,state.hotspot.floor,iso,actMBq);
+    // Convert uSv/hr to R/hr (1 R ≈ 0.00877 Gy gamma; 1 Gy ≈ 114 R for gamma → 1 uSv = ~0.001/0.877 R)
+    // More precisely: 1 R/hr = 8.77 mGy/hr ≈ 8.77 mSv/hr = 8770 uSv/hr for gamma
+    DR_hotspot_pos=result.shielded/8770.0; // R/hr
+    const T_pct=Math.round(result.T*100);
+    hotspotNote=`+hotspot (${iso.label.split(' ')[0]}, T=${T_pct}%)`;
+  }
+
+  // Combined DR at position
+  const DR_pos_total=DR_fallout_pos+DR_hotspot_pos;
+
+  // Accumulated dose — uses combined DR scaled to H+1 equivalent
+  // We scale DR1 to represent the combined source at H+1
+  const DR1_combined=DR1_fallout+(DR_hotspot_pos>0?DR_hotspot_pos:0);
+  const unit=(document.getElementById('person-dose-unit')?.value)||'R';
+  const doseR=calcAccumulatedDose(DR1_combined,pf,d.entry,d.duration)
+    + (DR_hotspot_pos>0 ? DR_hotspot_pos*d.duration : 0); // hotspot is constant (no decay model)
+  const doseDisp=convertDose(doseR,unit);
+  const risk=riskClass(doseR);
+
+  document.getElementById('person-dr1').textContent=DR1_fallout.toFixed(3);
+  document.getElementById('person-drpos').textContent=
+    DR_hotspot_pos>0
+      ? `${DR_fallout_pos.toFixed(3)} + ${DR_hotspot_pos.toFixed(4)} ${hotspotNote}`
+      : DR_pos_total.toFixed(3);
+  document.getElementById('person-dose-acc').textContent=doseDisp.toFixed(3)+' '+unit;
+  document.getElementById('person-dose-acc').style.color=
+    doseR<25?'#00cc33':doseR<100?'#ffb000':doseR<300?'#ff8800':'#ff3333';
+  document.getElementById('person-risk').textContent=risk.label+(DR_hotspot_pos>0?' [combined]':'');
+  document.getElementById('person-risk').style.borderColor=
+    doseR<25?'#00cc33':doseR<100?'#ffb000':doseR<300?'#ff8800':'#ff3333';
+  document.getElementById('person-risk').style.color=
+    doseR<25?'#88ff88':doseR<100?'#ffcc66':doseR<300?'#ffaa44':'#ff8888';
+  document.getElementById('person-entry-ref').textContent=d.entry;
+  document.getElementById('person-dur-ref').textContent=d.duration;
+
+  // Status bar
+  document.getElementById('sb-room').textContent=
+    room
+      ? `PERSON: PF ${Math.round(pf)} in ${room.name} | DR ${DR_pos_total.toFixed(3)} R/hr | ${xFt}×${yFt}ft`
+      : `PERSON: PF 1 OPEN FIELD | DR ${DR_pos_total.toFixed(3)} R/hr | ${xFt}×${yFt}ft`;
+}
+function clearPerson(){state.person.active=false;document.getElementById('person-readout').style.display='none';document.getElementById('person-hint').style.display='block';drawCanvas();}
+
+// ============================================================
+// INIT
+// ============================================================
+function init(){
+  loadLib();
+  populateMaterialSelector();
+  populateIsotopeSelector();
+
+  // Initially hide wall face buttons, show room face buttons
+  ['A','B'].forEach(fk=>{const el=document.getElementById('face-'+fk);if(el)el.style.display='none';});
+
+  state.floor='ground';
+  syncSkyshineBtnState();
+  resizeCanvas();
+  updateAll();
+}
+
+return {
+  setUnits,setFloor,setTool,selectRoomById,selectFace,
+  updateRoomProp,updateBuildingCfg,setRoomDimension,setWallLength,setWallAngle,toggleSkyshine,
+  addLayer,removeLayer,moveLayer,addOpening,removeOpening,
+  copyFaceToAll,saveAssemblyToLib,applyLibAssembly,deleteLibAssembly,
+  switchTab,updateDoseMode,syncSlider,syncNum,calcDose,
+  newProject,exportProject,importProject,
+  startDrag,
+  ctxRename,ctxEditDims,ctxChangeFloor,ctxDuplicate,ctxDelete,deleteRoom,
+  deleteSelectedWall,
+  rotateRoom,
+  undo,redo,
+  toggleHeatmap,setHeatmapRes,setHeatmapMode,clearPerson,
+  toggleHotspot,updateHotspotCfg,setHotspotDRUnit,clearHotspot,
+  loadFloorplan,setFloorplanVisible,setFloorplanOpacity,clearFloorplan,
+  zoomIn,zoomOut,zoomReset,zoomAtPoint,toggleKey,
+  closeContextMenu,
+  init
+};
+})();
+
+S.init();
+</script>
+</body>
+</html>
